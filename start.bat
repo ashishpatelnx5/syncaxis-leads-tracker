@@ -3,6 +3,7 @@ setlocal enabledelayedexpansion
 
 set ROOT=%~dp0
 set SERVER_DIR=%ROOT%app\server
+set CLIENT_DIR=%ROOT%app\client
 set PIDFILE=%ROOT%.server.pid
 set LOGDIR=%SERVER_DIR%\logs
 
@@ -20,6 +21,20 @@ if exist "%PIDFILE%" (
 if not exist "%SERVER_DIR%\dist\server.js" (
     echo %SERVER_DIR%\dist\server.js not found.
     echo Build the server first: cd app\server ^&^& npm install ^&^& npm run build
+    pause
+    exit /b 1
+)
+
+if not exist "%CLIENT_DIR%\dist\index.html" (
+    echo %CLIENT_DIR%\dist\index.html not found.
+    echo Build the client first: cd app\client ^&^& npm install ^&^& npm run build
+    pause
+    exit /b 1
+)
+
+if not exist "%SERVER_DIR%\.env" (
+    echo %SERVER_DIR%\.env not found.
+    echo Copy app\server\.env.example to app\server\.env and fill in your DB/auth settings first.
     pause
     exit /b 1
 )
