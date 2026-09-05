@@ -1,18 +1,27 @@
 @echo off
-setlocal
+setlocal enabledelayedexpansion
 
-rem ---- Adjust these if your setup differs ----
-set SERVICE_NAME=SyncaxisLeadsTracker
-set NSSM=C:\Tools\nssm.exe
-rem ---------------------------------------------
+set ROOT=%~dp0
+set PIDFILE=%ROOT%.server.pid
 
-if not exist "%NSSM%" (
-    echo NSSM not found at %NSSM%. Edit the NSSM path at the top of this file.
+if not exist "%PIDFILE%" (
+    echo Syncaxis Leads Tracker doesn't look like it's running ^(no PID file^).
     pause
-    exit /b 1
+    exit /b 0
 )
 
-echo Stopping "%SERVICE_NAME%"...
-"%NSSM%" stop "%SERVICE_NAME%"
-"%NSSM%" status "%SERVICE_NAME%"
+set /p PID=<"%PIDFILE%"
+
+tasklist /FI "PID eq !PID!" 2>nul | find "!PID!" >nul
+if errorlevel 1 (
+    echo Not running ^(recorded PID !PID! is no longer active^).
+    del "%PIDFILE%" >nul 2>&1
+    pause
+    exit /b 0
+)
+
+echo Stopping Syncaxis Leads Tracker ^(PID !PID!^)...
+taskkill /PID !PID! /F >nul 2>&1
+del "%PIDFILE%" >nul 2>&1
+echo Stopped.
 pause

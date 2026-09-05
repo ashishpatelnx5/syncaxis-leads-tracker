@@ -5,8 +5,8 @@ built React app for everything else, on one port (`8057` by default). There's no
 else to run — no separate frontend server, no IIS required (though you can optionally
 put IIS in front of it for SSL/port 80, see the bottom of this doc).
 
-`start.bat` and `stop.bat` in the repo root control it as a Windows Service and are
-used throughout this guide.
+`start.bat` and `stop.bat` in the repo root run it directly (no Windows Service, no
+third-party tools) and are used throughout this guide.
 
 ## 1. Prerequisites on the server
 
@@ -16,10 +16,6 @@ used throughout this guide.
   fine too), with the SQL Server prerequisites from `app/db/production/README.md`
   already done (mixed-mode auth, TCP/IP enabled, SQL Browser running, firewall).
 - The three scripts in `app/db/production/` already run against `SYNCAXIS_LEADS`.
-- **NSSM** downloaded from https://nssm.cc/download and `nssm.exe` (the `win64` build)
-  placed at `C:\Tools\nssm.exe` — used by `start.bat` to run the app as a Windows
-  Service. If you put it somewhere else, edit the `NSSM` path near the top of
-  `start.bat` and `stop.bat`.
 
 ## 2. Copy the project to the server
 
@@ -55,8 +51,8 @@ SESSION_SECRET=
 ```
 
 `SESSION_SECRET` can be left blank — a random one is generated at startup — but if you
-leave it blank, everyone is signed out whenever the service restarts (a redeploy, a
-server reboot). Set it to a fixed random string here to avoid that.
+leave it blank, everyone is signed out whenever you restart the app. Set it to a fixed
+random string here to avoid that.
 
 Then compile the TypeScript server:
 
@@ -92,33 +88,47 @@ duplicate everything.
 
 ## 6. Start it
 
-From the repo root, double-click **`start.bat`** (or run it from a terminal). The first
-time you run it, it installs the Windows Service automatically — registering it with
-NSSM, pointing its logs at `app\server\logs\out.log` / `err.log`, and setting it to
-auto-start on boot — then starts it. Every time after that, it just starts the
-already-installed service.
+From the repo root, double-click **`start.bat`** (or run it from a terminal):
 
 ```
 C:\Apps\SyncaxisLeadsTracker> start.bat
 ```
+
+It launches `node dist\server.js` in the background (no console window stays open),
+writes its process ID to `.server.pid` in the repo root, and logs to
+`app\server\logs\out.log` / `err.log`. Running it again while already running just tells
+you it's already up instead of starting a second copy.
 
 Check it's up: open `http://localhost:8057` in a browser on the server, or
 `http://<server-name>:8057` from another machine on the network.
 
 ## 7. Stop it
 
-Double-click **`stop.bat`** (or run it from a terminal) to stop the service. Files, the
-database, and `.env` are untouched — `start.bat` will start it right back up again.
+Double-click **`stop.bat`** (or run it from a terminal):
 
 ```
 C:\Apps\SyncaxisLeadsTracker> stop.bat
 ```
 
-You can also use Windows' built-in **Services** app (`services.msc`) — look for
-"SyncaxisLeadsTracker" — to start/stop it from a GUI, or check its status alongside
-other services.
+It stops the process recorded in `.server.pid` and removes that file. Files, the
+database, and `.env` are untouched — `start.bat` will start it right back up again.
 
-## 8. Firewall
+## 8. What this does *not* do
+
+Because there's no Windows Service involved, keep in mind:
+
+- **It won't restart itself if it crashes.** If that matters, check
+  `app\server\logs\err.log` occasionally, or wrap the health check in a scheduled task
+  that runs `start.bat` every few minutes (harmless — it no-ops if already running).
+- **It won't start automatically when the server reboots.** If you want that, open Task
+  Scheduler → Create Task → Trigger: "At startup" → Action: run `start.bat` (with
+  "Start in" set to the repo root) → check "Run whether user is logged on or not".
+
+If you'd rather have real auto-restart-on-crash and auto-start-on-boot out of the box,
+running it as a proper Windows Service (e.g. via NSSM) is the more robust option — just
+not what `start.bat`/`stop.bat` do here, by design, to keep things dependency-free.
+
+## 9. Firewall
 
 Allow inbound TCP on port 8057 (or whatever `PORT` you set in `.env`):
 
@@ -129,14 +139,14 @@ New-NetFirewallRule -DisplayName "Syncaxis Leads Tracker" -Direction Inbound -Pr
 Your sales/marketing team can then reach it at `http://<server-name>:8057` from their
 browsers on the office network.
 
-## 9. Optional: put IIS in front (for a friendlier URL, or HTTPS)
+## 10. Optional: put IIS in front (for a friendlier URL, or HTTPS)
 
 If you'd rather your team visit `http://leads.company.local` (port 80) or a proper HTTPS
 URL instead of `:8057`, install IIS with the **Application Request Routing (ARR)** and
 **URL Rewrite** modules, then set up a reverse-proxy site that forwards everything to
 `http://localhost:8057`. This is optional — the app works fine without IIS.
 
-## 10. Updating the app later
+## 11. Updating the app later
 
 ```
 C:\Apps\SyncaxisLeadsTracker> stop.bat
@@ -146,15 +156,3 @@ C:\Apps\SyncaxisLeadsTracker> stop.bat
 2. Rebuild: `npm install && npm run build` in `app\server`, and `npm install && npm run build`
    in `app\client`.
 3. `start.bat`
-
-## 11. Removing the service entirely
-
-If you ever need to reinstall it with different settings, remove the existing service
-first (this doesn't touch your files, database, or `.env`):
-
-```powershell
-C:\Tools\nssm.exe stop SyncaxisLeadsTracker
-C:\Tools\nssm.exe remove SyncaxisLeadsTracker confirm
-```
-
-`start.bat` will register it fresh the next time you run it.
