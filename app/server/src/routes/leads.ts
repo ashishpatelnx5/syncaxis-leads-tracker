@@ -237,9 +237,32 @@ router.get('/export', async (req: Request, res: Response) => {
       });
     }
 
+    const THIN_GRAY_BORDER: Partial<ExcelJS.Borders> = {
+      top: { style: 'thin', color: { argb: 'FFD0D7E1' } },
+      left: { style: 'thin', color: { argb: 'FFD0D7E1' } },
+      bottom: { style: 'thin', color: { argb: 'FFD0D7E1' } },
+      right: { style: 'thin', color: { argb: 'FFD0D7E1' } },
+    };
+    const BAND_FILL: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEAF2FB' } };
+
     const headerRow = sheet.getRow(1);
     headerRow.font = { bold: true };
     headerRow.alignment = { vertical: 'middle' };
+    headerRow.eachCell((cell) => {
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFADD8E6' } }; // light blue
+      cell.border = THIN_GRAY_BORDER;
+    });
+
+    // Zebra-stripe the data rows and give every cell a light grid border, so
+    // the sheet reads cleanly even before anyone touches the AutoFilter.
+    for (let rowNumber = 2; rowNumber <= sheet.rowCount; rowNumber++) {
+      const row = sheet.getRow(rowNumber);
+      const isBanded = rowNumber % 2 === 0;
+      row.eachCell({ includeEmpty: true }, (cell) => {
+        if (isBanded) cell.fill = BAND_FILL;
+        cell.border = THIN_GRAY_BORDER;
+      });
+    }
 
     // Freeze the header row and the first two columns (Enquiry Number,
     // Company Name) so they stay visible scrolling down or across.
