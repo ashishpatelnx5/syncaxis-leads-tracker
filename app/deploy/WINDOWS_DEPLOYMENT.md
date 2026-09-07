@@ -19,10 +19,15 @@ third-party tools) and are used throughout this guide.
 
 ## 2. Copy the project to the server
 
-Copy the whole project folder to the server, e.g. to `C:\Apps\SyncaxisLeadsTracker`.
-(Via git clone, a zip copy, or a shared drive — whatever your team normally uses to move
-code to this box.) `start.bat`/`stop.bat` find `app\server` relative to their own
-location, so it doesn't matter exactly where you put it.
+```powershell
+cd C:\Apps
+git clone https://github.com/ashishpatelnx5/syncaxis-leads-tracker.git SyncaxisLeadsTracker
+```
+
+(Or a zip download of the repo, or a shared drive — whatever your team normally uses to
+move code to this box, if `git` isn't installed on the server.) `start.bat`/`stop.bat`
+find `app\server` relative to their own location, so it doesn't matter exactly where you
+put it.
 
 ## 3. Build the server
 
@@ -99,6 +104,11 @@ writes its process ID to `.server.pid` in the repo root, and logs to
 `app\server\logs\out.log` / `err.log`. Running it again while already running just tells
 you it's already up instead of starting a second copy.
 
+You may see a line that reads `ERROR: Input redirection is not supported, exiting the
+process immediately.` flash by while it starts — this is harmless (a quirk of how the
+background process gets launched) and does not mean the app failed. Trust the "Started
+(PID ...)" line after it, and confirm below.
+
 Check it's up: open `http://localhost:8057` in a browser on the server, or
 `http://<server-name>:8057` from another machine on the network.
 
@@ -148,11 +158,21 @@ URL instead of `:8057`, install IIS with the **Application Request Routing (ARR)
 
 ## 11. Updating the app later
 
-```
-C:\Apps\SyncaxisLeadsTracker> stop.bat
+```powershell
+cd C:\Apps\SyncaxisLeadsTracker
+.\stop.bat
+git pull
+cd app\server
+npm install
+npm run build
+cd ..\client
+npm install
+npm run build
+cd ..\..
+.\start.bat
 ```
 
-1. Copy in the updated files (or `git pull`).
-2. Rebuild: `npm install && npm run build` in `app\server`, and `npm install && npm run build`
-   in `app\client`.
-3. `start.bat`
+(If you're not using git on this server, copy in the updated files instead of `git
+pull`, then do the same rebuild + restart. Each command above is on its own line
+deliberately — Windows PowerShell 5.1, the default on most Windows Servers, doesn't
+support chaining commands with `&&`.)
