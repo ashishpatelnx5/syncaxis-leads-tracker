@@ -118,12 +118,49 @@ export interface LeadInput {
   notes?: string | null;
 }
 
-export function fetchLeads(filters: LeadFilters): Promise<LeadListResponse> {
+function toLeadFilterParams(filters: LeadFilters): URLSearchParams {
   const params = new URLSearchParams();
   Object.entries(filters).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== '') params.set(key, String(value));
   });
-  return request(`/leads?${params.toString()}`);
+  return params;
+}
+
+export function fetchLeads(filters: LeadFilters): Promise<LeadListResponse> {
+  return request(`/leads?${toLeadFilterParams(filters).toString()}`);
+}
+
+// Downloads an .xlsx of every lead matching `filters` (no pagination) by
+// triggering a browser save, rather than returning parsed JSON like the rest
+// of this module - the response body here is a binary file, not data to render.
+export async function exportLeads(filters: LeadFilters): Promise<void> {
+  const res = await fetch(`/api/leads/export?${toLeadFilterParams(filters).toString()}`, {
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    let message = `Export failed (${res.status})`;
+    try {
+      const body = await res.json();
+      if (body?.error) message = body.error;
+    } catch {
+      // ignore parse errors
+    }
+    throw new ApiError(message, res.status);
+  }
+
+  const disposition = res.headers.get('Content-Disposition') || '';
+  const match = disposition.match(/filename="?([^"]+)"?/);
+  const filename = match ? match[1] : 'Syncaxis_Leads_Export.xlsx';
+
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 export function fetchLead(id: number): Promise<{ lead: Lead; followups: Followup[] }> {

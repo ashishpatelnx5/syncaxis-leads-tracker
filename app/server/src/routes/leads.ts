@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import ExcelJS from 'exceljs';
 import { getPool, sql } from '../db';
 import { mapLeadRow, mapFollowupRow, CUSTOMER_JOIN_COLUMNS } from '../mappers';
 import {
@@ -19,41 +20,87 @@ const LEAD_SELECT_BASE = `
   JOIN dbo.Customers C ON C.Id = L.CustomerId
 `;
 
+const SORTABLE_COLUMNS: Record<string, string> = {
+  CompanyName: 'C.CompanyName',
+  NextFollowUpDate: 'L.NextFollowUpDate',
+  UpdatedAt: 'L.UpdatedAt',
+  CreatedAt: 'L.CreatedAt',
+  Priority: 'L.Priority',
+  FollowUpStatus: 'L.FollowUpStatus',
+  LeadValue: 'L.LeadValue',
+};
+
 function isValidEnum(value: unknown, options: readonly string[]): boolean {
   return typeof value === 'string' && options.includes(value);
+}
+
+// Builds the WHERE conditions for the leads list/export, binding parameters on
+// the given request. Shared so the export endpoint always matches whatever
+// the list endpoint would return for the same query params.
+function applyLeadFilters(request: any, query: Record<string, string>): string[] {
+  const { q, status, priority, leadType, assignedTo, customerId, cardCollected, inquirySource, productInterest, overdue, followUpDueDays } = query;
+  const conditions: string[] = ['L.IsDeleted = 0'];
+
+  if (q) {
+    conditions.push(
+      '(C.CompanyName LIKE @q OR C.ContactPersonName LIKE @q OR C.Email LIKE @q OR C.Phone LIKE @q OR L.EnquiryNumber LIKE @q OR C.CustomerCode LIKE @q)'
+    );
+    request.input('q', sql.NVarChar, `%${q}%`);
+  }
+  if (status === 'OpenPipeline') {
+    conditions.push(`L.FollowUpStatus NOT IN ${TERMINAL_STATUSES_SQL}`);
+  } else if (status && isValidEnum(status, FOLLOW_UP_STATUS_OPTIONS)) {
+    conditions.push('L.FollowUpStatus = @status');
+    request.input('status', sql.NVarChar, status);
+  }
+  if (priority && isValidEnum(priority, PRIORITY_OPTIONS)) {
+    conditions.push('L.Priority = @priority');
+    request.input('priority', sql.NVarChar, priority);
+  }
+  if (leadType && isValidEnum(leadType, LEAD_TYPE_OPTIONS)) {
+    conditions.push('L.LeadType = @leadType');
+    request.input('leadType', sql.NVarChar, leadType);
+  }
+  if (assignedTo) {
+    conditions.push('L.EnquiryAssignedTo = @assignedTo');
+    request.input('assignedTo', sql.NVarChar, assignedTo);
+  }
+  if (customerId) {
+    conditions.push('L.CustomerId = @customerId');
+    request.input('customerId', sql.Int, Number(customerId));
+  }
+  if (cardCollected && isValidEnum(cardCollected, CARD_COLLECTED_OPTIONS)) {
+    conditions.push('L.CardCollected = @cardCollected');
+    request.input('cardCollected', sql.NVarChar, cardCollected);
+  }
+  if (inquirySource) {
+    conditions.push('L.InquirySource = @inquirySource');
+    request.input('inquirySource', sql.NVarChar, inquirySource);
+  }
+  if (productInterest) {
+    conditions.push('L.ProductInterest = @productInterest');
+    request.input('productInterest', sql.NVarChar, productInterest);
+  }
+  if (overdue === 'true') {
+    conditions.push(`L.NextFollowUpDate IS NOT NULL AND L.NextFollowUpDate < CAST(SYSUTCDATETIME() AS DATE) AND L.FollowUpStatus NOT IN ${TERMINAL_STATUSES_SQL}`);
+  }
+  if (followUpDueDays) {
+    conditions.push(
+      'L.NextFollowUpDate IS NOT NULL AND L.NextFollowUpDate BETWEEN CAST(SYSUTCDATETIME() AS DATE) AND DATEADD(DAY, @followUpDueDays, CAST(SYSUTCDATETIME() AS DATE))'
+    );
+    request.input('followUpDueDays', sql.Int, Math.max(0, parseInt(followUpDueDays, 10) || 0));
+  }
+
+  return conditions;
 }
 
 // GET /api/leads - list with search/filter/sort/pagination
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const {
-      q,
-      status,
-      priority,
-      leadType,
-      assignedTo,
-      customerId,
-      cardCollected,
-      inquirySource,
-      productInterest,
-      overdue,
-      followUpDueDays,
-      page = '1',
-      pageSize = '25',
-      sortBy = 'UpdatedAt',
-      sortDir = 'desc',
-    } = req.query as Record<string, string>;
+    const query = req.query as Record<string, string>;
+    const { page = '1', pageSize = '25', sortBy = 'UpdatedAt', sortDir = 'desc' } = query;
 
-    const allowedSort: Record<string, string> = {
-      CompanyName: 'C.CompanyName',
-      NextFollowUpDate: 'L.NextFollowUpDate',
-      UpdatedAt: 'L.UpdatedAt',
-      CreatedAt: 'L.CreatedAt',
-      Priority: 'L.Priority',
-      FollowUpStatus: 'L.FollowUpStatus',
-      LeadValue: 'L.LeadValue',
-    };
-    const sortColumn = allowedSort[sortBy] || 'L.UpdatedAt';
+    const sortColumn = SORTABLE_COLUMNS[sortBy] || 'L.UpdatedAt';
     const direction = sortDir.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
@@ -61,66 +108,13 @@ router.get('/', async (req: Request, res: Response) => {
     const offset = (pageNum - 1) * size;
 
     const pool = await getPool();
-    const conditions: string[] = ['L.IsDeleted = 0'];
-
-    function applyFilters(request: any) {
-      if (q) {
-        conditions.push(
-          '(C.CompanyName LIKE @q OR C.ContactPersonName LIKE @q OR C.Email LIKE @q OR C.Phone LIKE @q OR L.EnquiryNumber LIKE @q OR C.CustomerCode LIKE @q)'
-        );
-        request.input('q', sql.NVarChar, `%${q}%`);
-      }
-      if (status === 'OpenPipeline') {
-        conditions.push(`L.FollowUpStatus NOT IN ${TERMINAL_STATUSES_SQL}`);
-      } else if (status && isValidEnum(status, FOLLOW_UP_STATUS_OPTIONS)) {
-        conditions.push('L.FollowUpStatus = @status');
-        request.input('status', sql.NVarChar, status);
-      }
-      if (priority && isValidEnum(priority, PRIORITY_OPTIONS)) {
-        conditions.push('L.Priority = @priority');
-        request.input('priority', sql.NVarChar, priority);
-      }
-      if (leadType && isValidEnum(leadType, LEAD_TYPE_OPTIONS)) {
-        conditions.push('L.LeadType = @leadType');
-        request.input('leadType', sql.NVarChar, leadType);
-      }
-      if (assignedTo) {
-        conditions.push('L.EnquiryAssignedTo = @assignedTo');
-        request.input('assignedTo', sql.NVarChar, assignedTo);
-      }
-      if (customerId) {
-        conditions.push('L.CustomerId = @customerId');
-        request.input('customerId', sql.Int, Number(customerId));
-      }
-      if (cardCollected && isValidEnum(cardCollected, CARD_COLLECTED_OPTIONS)) {
-        conditions.push('L.CardCollected = @cardCollected');
-        request.input('cardCollected', sql.NVarChar, cardCollected);
-      }
-      if (inquirySource) {
-        conditions.push('L.InquirySource = @inquirySource');
-        request.input('inquirySource', sql.NVarChar, inquirySource);
-      }
-      if (productInterest) {
-        conditions.push('L.ProductInterest = @productInterest');
-        request.input('productInterest', sql.NVarChar, productInterest);
-      }
-      if (overdue === 'true') {
-        conditions.push(`L.NextFollowUpDate IS NOT NULL AND L.NextFollowUpDate < CAST(SYSUTCDATETIME() AS DATE) AND L.FollowUpStatus NOT IN ${TERMINAL_STATUSES_SQL}`);
-      }
-      if (followUpDueDays) {
-        conditions.push(
-          'L.NextFollowUpDate IS NOT NULL AND L.NextFollowUpDate BETWEEN CAST(SYSUTCDATETIME() AS DATE) AND DATEADD(DAY, @followUpDueDays, CAST(SYSUTCDATETIME() AS DATE))'
-        );
-        request.input('followUpDueDays', sql.Int, Math.max(0, parseInt(followUpDueDays, 10) || 0));
-      }
-    }
 
     const countRequest = pool.request();
-    applyFilters(countRequest);
+    const conditions = applyLeadFilters(countRequest, query);
     const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
 
     const dataRequest = pool.request();
-    applyFilters(dataRequest);
+    applyLeadFilters(dataRequest, query);
     dataRequest.input('offset', sql.Int, offset);
     dataRequest.input('size', sql.Int, size);
 
@@ -143,6 +137,128 @@ router.get('/', async (req: Request, res: Response) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to fetch leads' });
+  }
+});
+
+// GET /api/leads/export - all leads matching the current filters (no pagination)
+// as an .xlsx download: frozen header row, frozen Enquiry/Company columns, and
+// Excel's AutoFilter on the header so the sheet is immediately filterable.
+router.get('/export', async (req: Request, res: Response) => {
+  try {
+    const query = req.query as Record<string, string>;
+    const { sortBy = 'UpdatedAt', sortDir = 'desc' } = query;
+    const sortColumn = SORTABLE_COLUMNS[sortBy] || 'L.UpdatedAt';
+    const direction = sortDir.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+
+    const pool = await getPool();
+    const request = pool.request();
+    const conditions = applyLeadFilters(request, query);
+    const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    const result = await request.query(`
+      ${LEAD_SELECT_BASE}
+      ${whereClause}
+      ORDER BY ${sortColumn} ${direction}
+    `);
+    const leads = result.recordset.map(mapLeadRow);
+
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('Leads');
+
+    sheet.columns = [
+      { header: 'Enquiry Number', key: 'enquiryNumber', width: 18 },
+      { header: 'Company Name', key: 'companyName', width: 28 },
+      { header: 'Contact Person', key: 'contactPersonName', width: 20 },
+      { header: 'Email', key: 'email', width: 26 },
+      { header: 'Phone', key: 'phone', width: 15 },
+      { header: 'Customer Code', key: 'customerCode', width: 14 },
+      { header: 'Department', key: 'department', width: 16 },
+      { header: 'Country', key: 'country', width: 12 },
+      { header: 'State', key: 'state', width: 14 },
+      { header: 'City', key: 'city', width: 14 },
+      { header: 'Application Category', key: 'applicationCategory', width: 22 },
+      { header: 'Application Detail', key: 'applicationDetail', width: 30 },
+      { header: 'Product Interest', key: 'productInterest', width: 18 },
+      { header: 'Card Collected', key: 'cardCollected', width: 14 },
+      { header: 'Follow-Up Status', key: 'followUpStatus', width: 16 },
+      { header: 'Priority', key: 'priority', width: 10 },
+      { header: 'Inquiry Source', key: 'inquirySource', width: 18 },
+      { header: 'Lead Type', key: 'leadType', width: 12 },
+      { header: 'Moved to SourcePro', key: 'movedToSourcePro', width: 16 },
+      { header: 'Lead Value', key: 'leadValue', width: 14 },
+      { header: 'Lead Generated By', key: 'leadGeneratedBy', width: 20 },
+      { header: 'Enquiry Assigned To', key: 'enquiryAssignedTo', width: 20 },
+      { header: 'Next Follow-up Date', key: 'nextFollowUpDate', width: 16 },
+      { header: 'ERP Lead Number', key: 'erpLeadNumber', width: 16 },
+      { header: 'Order No', key: 'orderNo', width: 14 },
+      { header: 'Order Date', key: 'orderDate', width: 14 },
+      { header: 'Received Date', key: 'receivedDate', width: 14 },
+      { header: 'No. of Follow-ups', key: 'followUpCount', width: 14 },
+      { header: 'Last Follow-up Date', key: 'lastFollowUpDate', width: 16 },
+      { header: 'Notes', key: 'notes', width: 40 },
+      { header: 'Created At', key: 'createdAt', width: 18 },
+      { header: 'Updated At', key: 'updatedAt', width: 18 },
+    ];
+
+    for (const lead of leads) {
+      sheet.addRow({
+        enquiryNumber: lead.enquiryNumber,
+        companyName: lead.customer.companyName,
+        contactPersonName: lead.customer.contactPersonName,
+        email: lead.customer.email,
+        phone: lead.customer.phone,
+        customerCode: lead.customer.customerCode,
+        department: lead.customer.department,
+        country: lead.customer.country,
+        state: lead.customer.state,
+        city: lead.customer.city,
+        applicationCategory: lead.applicationCategory,
+        applicationDetail: lead.applicationDetail,
+        productInterest: lead.productInterest,
+        cardCollected: lead.cardCollected,
+        followUpStatus: lead.followUpStatus,
+        priority: lead.priority,
+        inquirySource: lead.inquirySource,
+        leadType: lead.leadType,
+        movedToSourcePro: lead.movedToSourcePro ? 'Yes' : 'No',
+        leadValue: lead.leadValue,
+        leadGeneratedBy: lead.leadGeneratedBy,
+        enquiryAssignedTo: lead.enquiryAssignedTo,
+        nextFollowUpDate: lead.nextFollowUpDate,
+        erpLeadNumber: lead.erpLeadNumber,
+        orderNo: lead.orderNo,
+        orderDate: lead.orderDate,
+        receivedDate: lead.receivedDate,
+        followUpCount: lead.followUpCount ?? 0,
+        lastFollowUpDate: lead.lastFollowUpDate,
+        notes: lead.notes,
+        createdAt: lead.createdAt,
+        updatedAt: lead.updatedAt,
+      });
+    }
+
+    const headerRow = sheet.getRow(1);
+    headerRow.font = { bold: true };
+    headerRow.alignment = { vertical: 'middle' };
+
+    // Freeze the header row and the first two columns (Enquiry Number,
+    // Company Name) so they stay visible scrolling down or across.
+    sheet.views = [{ state: 'frozen', xSplit: 2, ySplit: 1 }];
+
+    // Excel's column filter dropdowns on the header row.
+    sheet.autoFilter = {
+      from: { row: 1, column: 1 },
+      to: { row: 1, column: sheet.columns.length },
+    };
+
+    const filename = `Syncaxis_Leads_Export_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to export leads' });
   }
 });
 

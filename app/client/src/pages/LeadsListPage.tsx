@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { fetchLeads, fetchMeta, deleteLead } from '../api';
+import { fetchLeads, fetchMeta, deleteLead, exportLeads } from '../api';
 import type { Lead, MetaResponse } from '../types';
 import { StatusBadge, PriorityBadge } from '../components/StatusBadge';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -50,6 +50,7 @@ export function LeadsListPage() {
 
   const [meta, setMeta] = useState<MetaResponse | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Lead | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     fetchMeta().then(setMeta).catch(() => {});
@@ -83,6 +84,22 @@ export function LeadsListPage() {
     load();
   }
 
+  async function handleExport() {
+    setExporting(true);
+    setError(null);
+    try {
+      await exportLeads({
+        q, status, priority, leadType, assignedTo,
+        cardCollected, inquirySource, productInterest, overdue, followUpDueDays,
+        sortBy, sortDir,
+      });
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setExporting(false);
+    }
+  }
+
   async function handleDelete() {
     if (!pendingDelete) return;
     try {
@@ -101,7 +118,12 @@ export function LeadsListPage() {
     <div className="page">
       <div className="page-header">
         <h1>Leads</h1>
-        <Link to="/leads/new" className="btn btn-primary">+ Add Lead</Link>
+        <div className="page-header-actions">
+          <button className="btn" onClick={handleExport} disabled={exporting}>
+            {exporting ? 'Exporting...' : '⬇ Export to Excel'}
+          </button>
+          <Link to="/leads/new" className="btn btn-primary">+ Add Lead</Link>
+        </div>
       </div>
 
       {specialFilterLabel && (
