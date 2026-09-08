@@ -14,7 +14,6 @@ function describeSpecialFilter(params: URLSearchParams): string | null {
   if (params.get('followUpDueDays')) return `Follow-ups due in the next ${params.get('followUpDueDays')} days`;
   if (params.get('cardCollected')) return `Card collected: ${params.get('cardCollected')}`;
   if (params.get('inquirySource')) return `Inquiry source: ${params.get('inquirySource')}`;
-  if (params.get('productInterest')) return `Product interest: ${params.get('productInterest')}`;
   if (params.get('status') === 'OpenPipeline') return 'Open pipeline (active leads)';
   return null;
 }
@@ -29,6 +28,7 @@ export function LeadsListPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [q, setQ] = useState(searchParams.get('q') || '');
+  const [productInterest, setProductInterest] = useState(searchParams.get('productInterest') || '');
   const [status, setStatus] = useState(searchParams.get('status') || '');
   const [priority, setPriority] = useState(searchParams.get('priority') || '');
   const [leadType, setLeadType] = useState(searchParams.get('leadType') || '');
@@ -44,7 +44,6 @@ export function LeadsListPage() {
   const specialFilterLabel = describeSpecialFilter(searchParams);
   const cardCollected = searchParams.get('cardCollected') || undefined;
   const inquirySource = searchParams.get('inquirySource') || undefined;
-  const productInterest = searchParams.get('productInterest') || undefined;
   const overdue = searchParams.get('overdue') === 'true' || undefined;
   const followUpDueDays = searchParams.get('followUpDueDays') ? Number(searchParams.get('followUpDueDays')) : undefined;
 
@@ -145,6 +144,10 @@ export function LeadsListPage() {
           <button type="submit" className="btn">Search</button>
         </div>
         <div className="filter-row">
+          <select value={productInterest} onChange={(e) => { setProductInterest(e.target.value); setPage(1); }}>
+            <option value="">All product interests</option>
+            {meta?.productInterests.map((p) => <option key={p} value={p}>{p}</option>)}
+          </select>
           <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }}>
             <option value="">All statuses</option>
             <option value="OpenPipeline">Open Pipeline (Active)</option>

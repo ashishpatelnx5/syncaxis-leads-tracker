@@ -20,11 +20,12 @@ async function distinctValues(pool: any, table: string, column: string, extraWhe
 router.get('/', async (_req: Request, res: Response) => {
   try {
     const pool = await getPool();
-    const [applicationCategories, inquirySources, assignees, generators, countries, states, cities] = await Promise.all([
+    const [applicationCategories, inquirySources, assignees, generators, productInterests, countries, states, cities] = await Promise.all([
       distinctValues(pool, 'Leads', 'ApplicationCategory'),
       distinctValues(pool, 'Leads', 'InquirySource'),
       distinctValues(pool, 'Leads', 'EnquiryAssignedTo'),
       distinctValues(pool, 'Leads', 'LeadGeneratedBy'),
+      distinctValues(pool, 'Leads', 'ProductInterest'),
       distinctValues(pool, 'Customers', 'Country'),
       distinctValues(pool, 'Customers', 'State'),
       distinctValues(pool, 'Customers', 'City'),
@@ -39,6 +40,7 @@ router.get('/', async (_req: Request, res: Response) => {
       inquirySources,
       assignees,
       generators,
+      productInterests,
       countries,
       states,
       cities,
