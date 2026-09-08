@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import { LoginPage } from './pages/LoginPage';
 import { Sidebar } from './components/Sidebar';
@@ -9,7 +9,8 @@ import { LeadDetailPage } from './pages/LeadDetailPage';
 import { CustomersListPage } from './pages/CustomersListPage';
 import { CustomerFormPage } from './pages/CustomerFormPage';
 import { CustomerDetailPage } from './pages/CustomerDetailPage';
-import { AdminPage } from './pages/AdminPage';
+import { AdminLeadsPage } from './pages/AdminLeadsPage';
+import { AdminCustomersPage } from './pages/AdminCustomersPage';
 
 function AppShell() {
   const { authenticated, checking } = useAuth();
@@ -32,7 +33,9 @@ function AppShell() {
             <Route path="/customers/new" element={<CustomerFormPage />} />
             <Route path="/customers/:id" element={<CustomerDetailPage />} />
             <Route path="/customers/:id/edit" element={<CustomerFormPage />} />
-            <Route path="/admin" element={<AdminPage />} />
+            <Route path="/admin" element={<Navigate to="/admin/leads" replace />} />
+            <Route path="/admin/leads" element={<AdminLeadsPage />} />
+            <Route path="/admin/customers" element={<AdminCustomersPage />} />
           </Routes>
         </main>
       </div>
