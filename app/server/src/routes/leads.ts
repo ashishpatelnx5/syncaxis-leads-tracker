@@ -314,22 +314,18 @@ router.get('/:id', async (req: Request, res: Response) => {
   }
 });
 
-// isUpdate=true skips the "must supply a new customer" check: on update, no
-// customerId just means "keep the lead's current customer", unlike create
-// where a missing customerId means a brand-new customer must be described.
+// Leads always reference an existing customer - creating/editing customer
+// records happens only through the Customer Master pages, never through a
+// lead. isUpdate=true skips the customerId requirement: leaving it unset on
+// an update just means "keep the lead's current customer".
 function validateLeadBody(body: any, isUpdate: boolean): string | null {
-  const customer = body.customer || {};
-  if (!isUpdate && !body.customerId && (!customer.companyName || !String(customer.companyName).trim())) {
-    return 'customer.companyName is required when creating a new customer';
+  if (!isUpdate && !body.customerId) {
+    return 'customerId is required - select an existing customer, or create one first from the Customers page';
   }
   if (body.cardCollected && !isValidEnum(body.cardCollected, CARD_COLLECTED_OPTIONS)) return 'Invalid cardCollected';
   if (body.followUpStatus && !isValidEnum(body.followUpStatus, FOLLOW_UP_STATUS_OPTIONS)) return 'Invalid followUpStatus';
   if (body.priority && !isValidEnum(body.priority, PRIORITY_OPTIONS)) return 'Invalid priority';
   if (body.leadType && !isValidEnum(body.leadType, LEAD_TYPE_OPTIONS)) return 'Invalid leadType';
-  if (customer.email && String(customer.email).trim()) {
-    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRe.test(String(customer.email).trim())) return 'Invalid customer email address';
-  }
   return null;
 }
 
@@ -355,62 +351,19 @@ function bindLeadFieldInputs(request: any, body: any) {
   request.input('notes', sql.NVarChar(sql.MAX), body.notes ?? null);
 }
 
-function bindCustomerFieldInputs(request: any, customer: any) {
-  request.input('custCustomerCode', sql.NVarChar, customer.customerCode || null);
-  request.input('custCompanyName', sql.NVarChar, customer.companyName);
-  request.input('custDepartment', sql.NVarChar, customer.department || null);
-  request.input('custContactPersonName', sql.NVarChar, customer.contactPersonName || null);
-  request.input('custEmail', sql.NVarChar, customer.email || null);
-  request.input('custPhone', sql.NVarChar, customer.phone || null);
-  request.input('custCountry', sql.NVarChar, customer.country || null);
-  request.input('custState', sql.NVarChar, customer.state || null);
-  request.input('custCity', sql.NVarChar, customer.city || null);
-}
-
-// Resolves body.customerId / body.customer into a concrete customer id within
-// the given transaction request, creating or updating the customer row as needed.
-async function resolveCustomerId(transactionRequestFactory: () => any, body: any): Promise<number> {
-  const customer = body.customer || {};
-
-  if (body.customerId) {
-    if (customer.companyName && String(customer.companyName).trim()) {
-      const updateRequest = transactionRequestFactory();
-      updateRequest.input('id', sql.Int, body.customerId);
-      bindCustomerFieldInputs(updateRequest, customer);
-      await updateRequest.query(`
-        UPDATE dbo.Customers SET
-          CustomerCode = @custCustomerCode, CompanyName = @custCompanyName, Department = @custDepartment,
-          ContactPersonName = @custContactPersonName, Email = @custEmail, Phone = @custPhone,
-          Country = @custCountry, State = @custState, City = @custCity, UpdatedAt = SYSUTCDATETIME()
-        WHERE Id = @id
-      `);
-    }
-    return body.customerId;
-  }
-
-  const insertRequest = transactionRequestFactory();
-  bindCustomerFieldInputs(insertRequest, customer);
-  const result = await insertRequest.query(`
-    INSERT INTO dbo.Customers (CustomerCode, CompanyName, Department, ContactPersonName, Email, Phone, Country, State, City)
-    OUTPUT INSERTED.Id
-    VALUES (@custCustomerCode, @custCompanyName, @custDepartment, @custContactPersonName, @custEmail, @custPhone, @custCountry, @custState, @custCity)
-  `);
-  return result.recordset[0].Id;
-}
-
-// POST /api/leads - create (and, if no customerId given, the customer alongside it)
+// POST /api/leads - create against an existing customer
 router.post('/', async (req: Request, res: Response) => {
   const validationError = validateLeadBody(req.body, false);
   if (validationError) return res.status(400).json({ error: validationError });
 
-  const pool = await getPool();
-  const transaction = new sql.Transaction(pool);
   try {
-    await transaction.begin();
-    const customerId = await resolveCustomerId(() => new sql.Request(transaction), req.body);
+    const pool = await getPool();
 
-    const leadRequest = new sql.Request(transaction);
-    leadRequest.input('customerId', sql.Int, customerId);
+    const customerExists = await pool.request().input('id', sql.Int, req.body.customerId).query('SELECT Id FROM dbo.Customers WHERE Id = @id AND IsDeleted = 0');
+    if (!customerExists.recordset.length) return res.status(400).json({ error: 'Customer not found' });
+
+    const leadRequest = pool.request();
+    leadRequest.input('customerId', sql.Int, req.body.customerId);
     bindLeadFieldInputs(leadRequest, req.body);
     const result = await leadRequest.query(`
       INSERT INTO dbo.Leads (
@@ -426,18 +379,16 @@ router.post('/', async (req: Request, res: Response) => {
       )
     `);
     const newId = result.recordset[0].Id;
-    await transaction.commit();
 
     const leadResult = await pool.request().input('id', sql.Int, newId).query(`${LEAD_SELECT_BASE} WHERE L.Id = @id`);
     res.status(201).json(mapLeadRow(leadResult.recordset[0]));
   } catch (err) {
-    await transaction.rollback().catch(() => {});
     console.error(err);
     res.status(500).json({ error: 'Failed to create lead' });
   }
 });
 
-// PUT /api/leads/:id - update (and the linked customer's fields, if provided)
+// PUT /api/leads/:id - update (customerId, if provided, must be an existing customer)
 router.put('/:id', async (req: Request, res: Response) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id)) return res.status(400).json({ error: 'Invalid lead id' });
@@ -445,20 +396,19 @@ router.put('/:id', async (req: Request, res: Response) => {
   const validationError = validateLeadBody(req.body, true);
   if (validationError) return res.status(400).json({ error: validationError });
 
-  const pool = await getPool();
-
-  const existing = await pool.request().input('id', sql.Int, id).query('SELECT Id, CustomerId FROM dbo.Leads WHERE Id = @id AND IsDeleted = 0');
-  if (!existing.recordset.length) return res.status(404).json({ error: 'Lead not found' });
-
-  const transaction = new sql.Transaction(pool);
   try {
-    await transaction.begin();
-    const customerId = await resolveCustomerId(
-      () => new sql.Request(transaction),
-      { ...req.body, customerId: req.body.customerId || existing.recordset[0].CustomerId }
-    );
+    const pool = await getPool();
 
-    const leadRequest = new sql.Request(transaction);
+    const existing = await pool.request().input('id', sql.Int, id).query('SELECT Id, CustomerId FROM dbo.Leads WHERE Id = @id AND IsDeleted = 0');
+    if (!existing.recordset.length) return res.status(404).json({ error: 'Lead not found' });
+
+    const customerId = req.body.customerId || existing.recordset[0].CustomerId;
+    if (req.body.customerId) {
+      const customerExists = await pool.request().input('id', sql.Int, customerId).query('SELECT Id FROM dbo.Customers WHERE Id = @id AND IsDeleted = 0');
+      if (!customerExists.recordset.length) return res.status(400).json({ error: 'Customer not found' });
+    }
+
+    const leadRequest = pool.request();
     leadRequest.input('id', sql.Int, id);
     leadRequest.input('customerId', sql.Int, customerId);
     bindLeadFieldInputs(leadRequest, req.body);
@@ -487,12 +437,10 @@ router.put('/:id', async (req: Request, res: Response) => {
         UpdatedAt = SYSUTCDATETIME()
       WHERE Id = @id
     `);
-    await transaction.commit();
 
     const leadResult = await pool.request().input('id', sql.Int, id).query(`${LEAD_SELECT_BASE} WHERE L.Id = @id`);
     res.json(mapLeadRow(leadResult.recordset[0]));
   } catch (err) {
-    await transaction.rollback().catch(() => {});
     console.error(err);
     res.status(500).json({ error: 'Failed to update lead' });
   }

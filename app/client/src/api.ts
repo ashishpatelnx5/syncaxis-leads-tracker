@@ -94,9 +94,10 @@ export interface LeadFilters {
   sortDir?: 'asc' | 'desc';
 }
 
+// Leads always reference an existing customer - customerId is required.
+// Customer records are created/edited only via the Customer Master pages.
 export interface LeadInput {
-  customerId?: number | null;
-  customer: CustomerInput;
+  customerId: number;
   enquiryNumber?: string | null;
   applicationCategory?: string | null;
   applicationDetail?: string | null;

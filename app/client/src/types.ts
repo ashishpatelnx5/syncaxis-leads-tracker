@@ -89,4 +89,7 @@ export interface MetaResponse {
   inquirySources: string[];
   assignees: string[];
   generators: string[];
+  countries: string[];
+  states: string[];
+  cities: string[];
 }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { createCustomer, updateCustomer, fetchCustomer } from '../api';
-import type { CustomerInput } from '../types';
+import { createCustomer, updateCustomer, fetchCustomer, fetchMeta } from '../api';
+import type { CustomerInput, MetaResponse } from '../types';
 import { EMPTY_CUSTOMER } from '../defaults';
 import { CustomerFieldsFieldset } from '../components/CustomerFieldsFieldset';
 
@@ -11,9 +11,14 @@ export function CustomerFormPage() {
   const navigate = useNavigate();
 
   const [form, setForm] = useState<CustomerInput>(EMPTY_CUSTOMER);
+  const [meta, setMeta] = useState<MetaResponse | null>(null);
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchMeta().then(setMeta).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (isEdit) {
@@ -62,10 +67,7 @@ export function CustomerFormPage() {
       {error && <div className="alert alert-error">{error}</div>}
 
       <form className="lead-form" onSubmit={handleSubmit}>
-        <fieldset>
-          <legend>Company &amp; Contact</legend>
-          <CustomerFieldsFieldset value={form} onChange={set} />
-        </fieldset>
+        <CustomerFieldsFieldset value={form} onChange={set} meta={meta} />
 
         <div className="form-actions">
           <button type="button" className="btn" onClick={() => navigate(-1)}>Cancel</button>

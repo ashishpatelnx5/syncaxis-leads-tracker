@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { createLead, updateLead, fetchLead, fetchMeta, fetchCustomer } from '../api';
-import type { Lead, MetaResponse, Customer, CustomerInput } from '../types';
+import type { Lead, MetaResponse, Customer } from '../types';
 import { CustomerPicker } from '../components/CustomerPicker';
-import { CustomerFieldsFieldset } from '../components/CustomerFieldsFieldset';
-import { EMPTY_CUSTOMER } from '../defaults';
+import { Field } from '../components/Field';
+import { formatLocation } from '../utils/format';
 
 type LeadFormState = Partial<Lead>;
 
@@ -24,7 +24,6 @@ export function LeadFormPage() {
   const preselectedCustomerId = searchParams.get('customerId');
 
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [customerForm, setCustomerForm] = useState<CustomerInput>(EMPTY_CUSTOMER);
   const [leadForm, setLeadForm] = useState<LeadFormState>(EMPTY_LEAD);
   const [meta, setMeta] = useState<MetaResponse | null>(null);
   const [loading, setLoading] = useState(isEdit);
@@ -41,16 +40,12 @@ export function LeadFormPage() {
         .then(({ lead }) => {
           setLeadForm(lead);
           setSelectedCustomer(lead.customer);
-          setCustomerForm(lead.customer);
         })
         .catch((err) => setError(err.message))
         .finally(() => setLoading(false));
     } else if (preselectedCustomerId) {
       fetchCustomer(Number(preselectedCustomerId))
-        .then(({ customer }) => {
-          setSelectedCustomer(customer);
-          setCustomerForm(customer);
-        })
+        .then(({ customer }) => setSelectedCustomer(customer))
         .catch((err) => setError(err.message));
     }
   }, [id, isEdit, preselectedCustomerId]);
@@ -59,34 +54,16 @@ export function LeadFormPage() {
     setLeadForm((f) => ({ ...f, [key]: value }));
   }
 
-  function setCustomerField<K extends keyof CustomerInput>(key: K, value: CustomerInput[K]) {
-    setCustomerForm((f) => ({ ...f, [key]: value }));
-  }
-
-  function handleSelectCustomer(customer: Customer) {
-    setSelectedCustomer(customer);
-    setCustomerForm(customer);
-  }
-
-  function handleClearCustomer() {
-    setSelectedCustomer(null);
-    setCustomerForm(EMPTY_CUSTOMER);
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!customerForm.companyName?.trim()) {
-      setError('Company name is required');
+    if (!selectedCustomer) {
+      setError('Select a customer first (or create one if they\'re not in the system yet)');
       return;
     }
     setSaving(true);
     setError(null);
     try {
-      const payload = {
-        customerId: selectedCustomer?.id ?? null,
-        customer: customerForm,
-        ...leadForm,
-      };
+      const payload = { customerId: selectedCustomer.id, ...leadForm };
       if (isEdit) {
         await updateLead(Number(id), payload);
         navigate(`/leads/${id}`);
@@ -114,13 +91,29 @@ export function LeadFormPage() {
       <form className="lead-form" onSubmit={handleSubmit}>
         <fieldset>
           <legend>Customer</legend>
-          <CustomerPicker selectedCustomer={selectedCustomer} onSelect={handleSelectCustomer} onClear={handleClearCustomer} />
-          <div style={{ marginTop: 14 }}>
-            <CustomerFieldsFieldset value={customerForm} onChange={setCustomerField} />
-          </div>
+          <CustomerPicker selectedCustomer={selectedCustomer} onSelect={setSelectedCustomer} onClear={() => setSelectedCustomer(null)} />
+
           {selectedCustomer && (
+            <div className="customer-readonly">
+              <Field label="Customer Code" value={selectedCustomer.customerCode} />
+              <Field label="Department" value={selectedCustomer.department} />
+              <Field label="Contact Person" value={selectedCustomer.contactPersonName} />
+              <Field label="Email" value={selectedCustomer.email} />
+              <Field label="Phone" value={selectedCustomer.phone} />
+              <Field label="Location" value={formatLocation(selectedCustomer)} />
+              <Link to={`/customers/${selectedCustomer.id}/edit`} className="btn-link" target="_blank" rel="noopener noreferrer">
+                Edit customer details ↗
+              </Link>
+            </div>
+          )}
+
+          {!selectedCustomer && (
             <p className="hint-text">
-              Editing these fields updates the customer record for all of their leads, not just this one.
+              Customer not found?{' '}
+              <Link to="/customers/new" target="_blank" rel="noopener noreferrer">
+                + Create a new customer
+              </Link>{' '}
+              (opens in a new tab), then come back and search for them above.
             </p>
           )}
         </fieldset>

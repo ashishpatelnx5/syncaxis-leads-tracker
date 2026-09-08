@@ -1,32 +1,32 @@
 :root {
-  --color-bg: #0b0d13;
-  --color-surface: #141a24;
-  --color-surface-hover: #1b2230;
-  --color-border: #262d3d;
-  --color-text: #edf0f5;
-  --color-text-muted: #93a0b8;
-  --color-primary: #3987e5;
-  --color-primary-dark: #2a78d6;
-  --color-danger: #e66767;
-  --color-danger-bg: rgba(230, 103, 103, 0.14);
-  --color-sidebar-bg: #0d1119;
-  --color-sidebar-bg-hover: #1a2233;
-  --color-sidebar-text: #93a0b8;
+  --color-bg: #f4f6f9;
+  --color-surface: #ffffff;
+  --color-surface-hover: #f0f2f5;
+  --color-border: #dfe3ea;
+  --color-text: #1f2733;
+  --color-text-muted: #6b7280;
+  --color-primary: #1f5eff;
+  --color-primary-dark: #1746c2;
+  --color-danger: #d1394a;
+  --color-danger-bg: #fdecee;
+  --color-sidebar-bg: #101d38;
+  --color-sidebar-bg-hover: #17284a;
+  --color-sidebar-text: #aab4c8;
   --color-sidebar-text-active: #ffffff;
-  --color-good: #0ca30c;
-  --color-bad: #e66767;
-  --accent-blue: #3987e5;
-  --accent-green: #199e70;
-  --accent-red: #e66767;
-  --accent-amber: #c98500;
-  --accent-teal: #2bb3a3;
-  --accent-violet: #9085e9;
-  --series-1: #3987e5;
-  --series-2: #d95926;
-  --chart-surface: #141a24;
+  --color-good: #1c8a45;
+  --color-bad: #c22a3c;
+  --accent-blue: #2a78d6;
+  --accent-green: #1baf7a;
+  --accent-red: #e34948;
+  --accent-amber: #d99a2b;
+  --accent-teal: #0e9594;
+  --accent-violet: #4a3aa7;
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --chart-surface: #ffffff;
   --radius: 8px;
   font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 * { box-sizing: border-box; }
@@ -54,7 +54,6 @@ a:hover { text-decoration: underline; }
   flex-direction: column;
   padding: 16px 14px;
   gap: 16px;
-  border-right: 1px solid var(--color-border);
 }
 
 .sidebar-top { padding: 4px; }
@@ -172,7 +171,7 @@ a:hover { text-decoration: underline; }
 .btn-danger {
   background: var(--color-danger);
   border-color: var(--color-danger);
-  color: #1a0d0d;
+  color: #fff;
 }
 .btn-danger:hover { opacity: 0.9; }
 
@@ -242,7 +241,7 @@ a:hover { text-decoration: underline; }
 
 table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--color-border); vertical-align: top; }
-th { background: rgba(255, 255, 255, 0.02); font-weight: 600; color: var(--color-text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; }
+th { background: #f9fafb; font-weight: 600; color: var(--color-text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; }
 tbody tr:last-child td { border-bottom: none; }
 .clickable-row { cursor: pointer; }
 .clickable-row:hover { background: var(--color-surface-hover); }
@@ -272,21 +271,21 @@ tbody tr:last-child td { border-bottom: none; }
   border-radius: 999px;
   font-size: 0.78rem;
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.06);
+  background: #eef1f6;
   color: var(--color-text);
   white-space: nowrap;
 }
-.status-not-contacted { background: rgba(255, 255, 255, 0.06); color: #b7c0d4; }
-.status-contacted { background: rgba(57, 135, 229, 0.16); color: #7cb2f5; }
-.status-meeting-scheduled { background: rgba(201, 133, 0, 0.16); color: #eab54d; }
-.status-quotation-sent { background: rgba(144, 133, 233, 0.18); color: #b3a9f5; }
-.status-won { background: rgba(25, 158, 112, 0.18); color: #4fd39a; }
-.status-lost { background: rgba(230, 103, 103, 0.18); color: #f19b9b; }
-.status-not-relevant { background: rgba(255, 255, 255, 0.05); color: #8a91a3; }
+.status-not-contacted { background: #eef1f6; color: #4b5563; }
+.status-contacted { background: #e3edff; color: #1f5eff; }
+.status-meeting-scheduled { background: #fdf1d6; color: #a3660a; }
+.status-quotation-sent { background: #e6e0ff; color: #5b3ecf; }
+.status-won { background: #dff5e6; color: #1c8a45; }
+.status-lost { background: #fbe3e6; color: #c22a3c; }
+.status-not-relevant { background: #f0f0f0; color: #7a7a7a; }
 
-.priority-hot { background: rgba(201, 133, 0, 0.16); color: #f0a63d; }
-.priority-warm { background: rgba(201, 133, 0, 0.1); color: #d9ab5c; }
-.priority-cold { background: rgba(57, 135, 229, 0.14); color: #7cb2f5; }
+.priority-hot { background: #fdeae5; color: #c8501f; }
+.priority-warm { background: #fdf1d6; color: #a3660a; }
+.priority-cold { background: #e4f1fb; color: #1a6faf; }
 
 .lead-form fieldset, .followup-form {
   background: var(--color-surface);
@@ -308,6 +307,10 @@ tbody tr:last-child td { border-bottom: none; }
   gap: 14px;
 }
 
+.form-grid-2col {
+  grid-template-columns: repeat(2, minmax(220px, 340px));
+}
+
 label {
   display: flex;
   flex-direction: column;
@@ -326,7 +329,7 @@ input, select, textarea {
   border-radius: var(--radius);
   border: 1px solid var(--color-border);
   color: var(--color-text);
-  background: var(--color-bg);
+  background: var(--color-surface);
 }
 
 textarea { resize: vertical; width: 100%; }
@@ -397,7 +400,7 @@ textarea { resize: vertical; width: 100%; }
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(15, 20, 30, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -425,6 +428,16 @@ textarea { resize: vertical; width: 100%; }
   font-size: 0.82rem;
   margin: 10px 0 0;
 }
+
+.customer-readonly {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-top: 14px;
+}
+.customer-readonly .detail-field:last-of-type { border-bottom: none; }
+.customer-readonly .btn-link { display: inline-block; margin-top: 8px; }
 
 .customer-picker {
   position: relative;
@@ -454,7 +467,7 @@ textarea { resize: vertical; width: 100%; }
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 24px rgba(15, 20, 30, 0.12);
   z-index: 20;
   max-height: 280px;
   overflow-y: auto;
@@ -506,7 +519,7 @@ textarea { resize: vertical; width: 100%; }
   padding: 32px;
   width: 100%;
   max-width: 380px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 20px 60px rgba(15, 20, 30, 0.35);
 }
 
 .login-card .logo { padding: 0; margin-bottom: 20px; background: none; }
@@ -620,7 +633,7 @@ textarea { resize: vertical; width: 100%; }
 .breakdown-bar-track {
   height: 8px;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.06);
+  background: #eef1f6;
   overflow: hidden;
 }
 

@@ -9,22 +9,25 @@ import {
 
 const router = Router();
 
-async function distinctValues(pool: any, column: string): Promise<string[]> {
+async function distinctValues(pool: any, table: string, column: string, extraWhere = ''): Promise<string[]> {
   const result = await pool
     .request()
-    .query(`SELECT DISTINCT ${column} AS v FROM dbo.Leads WHERE ${column} IS NOT NULL AND ${column} <> '' AND IsDeleted = 0 ORDER BY ${column}`);
+    .query(`SELECT DISTINCT ${column} AS v FROM dbo.${table} WHERE ${column} IS NOT NULL AND ${column} <> '' AND IsDeleted = 0 ${extraWhere} ORDER BY ${column}`);
   return result.recordset.map((r: any) => r.v);
 }
 
-// GET /api/meta - dropdown option lists for the lead form and filters
+// GET /api/meta - dropdown option lists for the lead/customer forms and filters
 router.get('/', async (_req: Request, res: Response) => {
   try {
     const pool = await getPool();
-    const [applicationCategories, inquirySources, assignees, generators] = await Promise.all([
-      distinctValues(pool, 'ApplicationCategory'),
-      distinctValues(pool, 'InquirySource'),
-      distinctValues(pool, 'EnquiryAssignedTo'),
-      distinctValues(pool, 'LeadGeneratedBy'),
+    const [applicationCategories, inquirySources, assignees, generators, countries, states, cities] = await Promise.all([
+      distinctValues(pool, 'Leads', 'ApplicationCategory'),
+      distinctValues(pool, 'Leads', 'InquirySource'),
+      distinctValues(pool, 'Leads', 'EnquiryAssignedTo'),
+      distinctValues(pool, 'Leads', 'LeadGeneratedBy'),
+      distinctValues(pool, 'Customers', 'Country'),
+      distinctValues(pool, 'Customers', 'State'),
+      distinctValues(pool, 'Customers', 'City'),
     ]);
 
     res.json({
@@ -36,6 +39,9 @@ router.get('/', async (_req: Request, res: Response) => {
       inquirySources,
       assignees,
       generators,
+      countries,
+      states,
+      cities,
     });
   } catch (err) {
     console.error(err);
