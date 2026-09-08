@@ -173,4 +173,28 @@ router.put('/:id', async (req: Request, res: Response) => {
   }
 });
 
+// DELETE /api/customers/:id - soft delete (Admin only). Blocked while the
+// customer still has active leads, so a lead never points at a hidden customer.
+router.delete('/:id', async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id)) return res.status(400).json({ error: 'Invalid customer id' });
+
+  try {
+    const pool = await getPool();
+    const existing = await pool.request().input('id', sql.Int, id).query('SELECT Id FROM dbo.Customers WHERE Id = @id AND IsDeleted = 0');
+    if (!existing.recordset.length) return res.status(404).json({ error: 'Customer not found' });
+
+    const leadCount = await pool.request().input('id', sql.Int, id).query('SELECT COUNT(*) AS Cnt FROM dbo.Leads WHERE CustomerId = @id AND IsDeleted = 0');
+    if (leadCount.recordset[0].Cnt > 0) {
+      return res.status(400).json({ error: `Can't delete - this customer still has ${leadCount.recordset[0].Cnt} lead(s). Delete or reassign those first.` });
+    }
+
+    await pool.request().input('id', sql.Int, id).query('UPDATE dbo.Customers SET IsDeleted = 1, UpdatedAt = SYSUTCDATETIME() WHERE Id = @id');
+    res.status(204).send();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to delete customer' });
+  }
+});
+
 export default router;

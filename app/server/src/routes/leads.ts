@@ -329,8 +329,33 @@ function validateLeadBody(body: any, isUpdate: boolean): string | null {
   return null;
 }
 
+// EnquiryNumber is a system-assigned identifier (SI/<fiscal year>/<sequence>) -
+// never accepted from the client, only ever set here on creation, and never
+// changed afterward (see bindLeadFieldInputs, which deliberately excludes it).
+function currentFiscalYearCode(): string {
+  const now = new Date();
+  const year = now.getUTCFullYear();
+  const month = now.getUTCMonth() + 1; // 1-12
+  const startYear = month >= 4 ? year : year - 1;
+  const endYear = startYear + 1;
+  return `${String(startYear).slice(-2)}${String(endYear).slice(-2)}`;
+}
+
+async function generateNextEnquiryNumber(pool: any): Promise<string> {
+  const prefix = `SI/${currentFiscalYearCode()}/`; // e.g. "SI/2627/"
+  const request = pool.request();
+  request.input('prefixMatch', sql.NVarChar, `${prefix}%`);
+  request.input('prefixLen', sql.Int, prefix.length);
+  const result = await request.query(`
+    SELECT MAX(CAST(SUBSTRING(EnquiryNumber, @prefixLen + 1, 10) AS INT)) AS MaxNum
+    FROM dbo.Leads
+    WHERE EnquiryNumber LIKE @prefixMatch AND ISNUMERIC(SUBSTRING(EnquiryNumber, @prefixLen + 1, 10)) = 1
+  `);
+  const nextNum = (result.recordset[0].MaxNum || 0) + 1;
+  return `${prefix}${nextNum}`;
+}
+
 function bindLeadFieldInputs(request: any, body: any) {
-  request.input('enquiryNumber', sql.NVarChar, body.enquiryNumber ?? null);
   request.input('applicationCategory', sql.NVarChar, body.applicationCategory ?? null);
   request.input('applicationDetail', sql.NVarChar, body.applicationDetail ?? null);
   request.input('productInterest', sql.NVarChar, body.productInterest ?? null);
@@ -362,8 +387,11 @@ router.post('/', async (req: Request, res: Response) => {
     const customerExists = await pool.request().input('id', sql.Int, req.body.customerId).query('SELECT Id FROM dbo.Customers WHERE Id = @id AND IsDeleted = 0');
     if (!customerExists.recordset.length) return res.status(400).json({ error: 'Customer not found' });
 
+    const enquiryNumber = await generateNextEnquiryNumber(pool);
+
     const leadRequest = pool.request();
     leadRequest.input('customerId', sql.Int, req.body.customerId);
+    leadRequest.input('enquiryNumber', sql.NVarChar, enquiryNumber);
     bindLeadFieldInputs(leadRequest, req.body);
     const result = await leadRequest.query(`
       INSERT INTO dbo.Leads (
@@ -415,7 +443,6 @@ router.put('/:id', async (req: Request, res: Response) => {
     await leadRequest.query(`
       UPDATE dbo.Leads SET
         CustomerId = @customerId,
-        EnquiryNumber = @enquiryNumber,
         ApplicationCategory = @applicationCategory,
         ApplicationDetail = @applicationDetail,
         ProductInterest = @productInterest,

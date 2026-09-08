@@ -1,23 +1,20 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
-import { fetchLead, addFollowup, deleteFollowup, deleteLead, fetchMeta } from '../api';
+import { Link, useParams } from 'react-router-dom';
+import { fetchLead, addFollowup, deleteFollowup, fetchMeta } from '../api';
 import type { Lead, Followup, MetaResponse } from '../types';
 import { StatusBadge, PriorityBadge } from '../components/StatusBadge';
 import { FollowupTimeline } from '../components/FollowupTimeline';
-import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Field } from '../components/Field';
 import { formatInr, formatLocation } from '../utils/format';
 
 export function LeadDetailPage() {
   const { id } = useParams();
   const leadId = Number(id);
-  const navigate = useNavigate();
 
   const [lead, setLead] = useState<Lead | null>(null);
   const [followups, setFollowups] = useState<Followup[]>([]);
   const [meta, setMeta] = useState<MetaResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const [fuDate, setFuDate] = useState(new Date().toISOString().slice(0, 10));
   const [fuBy, setFuBy] = useState('');
@@ -72,16 +69,6 @@ export function LeadDetailPage() {
     }
   }
 
-  async function handleDeleteLead() {
-    try {
-      await deleteLead(leadId);
-      navigate('/');
-    } catch (err: any) {
-      setError(err.message);
-      setConfirmDelete(false);
-    }
-  }
-
   if (error && !lead) return <div className="page"><div className="alert alert-error">{error}</div></div>;
   if (!lead) return <div className="page">Loading...</div>;
 
@@ -99,7 +86,6 @@ export function LeadDetailPage() {
         </div>
         <div className="page-header-actions">
           <Link to={`/leads/${lead.id}/edit`} className="btn">Edit</Link>
-          <button className="btn btn-danger" onClick={() => setConfirmDelete(true)}>Delete</button>
         </div>
       </div>
 
@@ -193,16 +179,6 @@ export function LeadDetailPage() {
           </div>
         </form>
       </section>
-
-      {confirmDelete && (
-        <ConfirmDialog
-          title="Delete lead"
-          message={`Are you sure you want to delete this lead for "${lead.customer.companyName}"? This cannot be undone from the UI.`}
-          confirmLabel="Delete"
-          onConfirm={handleDeleteLead}
-          onCancel={() => setConfirmDelete(false)}
-        />
-      )}
     </div>
   );
 }

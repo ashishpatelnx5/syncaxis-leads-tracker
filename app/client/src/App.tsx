@@ -9,6 +9,7 @@ import { LeadDetailPage } from './pages/LeadDetailPage';
 import { CustomersListPage } from './pages/CustomersListPage';
 import { CustomerFormPage } from './pages/CustomerFormPage';
 import { CustomerDetailPage } from './pages/CustomerDetailPage';
+import { AdminPage } from './pages/AdminPage';
 
 function AppShell() {
   const { authenticated, checking } = useAuth();
@@ -31,6 +32,7 @@ function AppShell() {
             <Route path="/customers/new" element={<CustomerFormPage />} />
             <Route path="/customers/:id" element={<CustomerDetailPage />} />
             <Route path="/customers/:id/edit" element={<CustomerFormPage />} />
+            <Route path="/admin" element={<AdminPage />} />
           </Routes>
         </main>
       </div>

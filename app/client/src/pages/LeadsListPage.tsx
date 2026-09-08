@@ -1,9 +1,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { fetchLeads, fetchMeta, deleteLead, exportLeads } from '../api';
+import { fetchLeads, fetchMeta, exportLeads } from '../api';
 import type { Lead, MetaResponse } from '../types';
 import { StatusBadge, PriorityBadge } from '../components/StatusBadge';
-import { ConfirmDialog } from '../components/ConfirmDialog';
 
 const PAGE_SIZE = 25;
 
@@ -48,7 +47,6 @@ export function LeadsListPage() {
   const followUpDueDays = searchParams.get('followUpDueDays') ? Number(searchParams.get('followUpDueDays')) : undefined;
 
   const [meta, setMeta] = useState<MetaResponse | null>(null);
-  const [pendingDelete, setPendingDelete] = useState<Lead | null>(null);
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
@@ -96,18 +94,6 @@ export function LeadsListPage() {
       setError(err.message);
     } finally {
       setExporting(false);
-    }
-  }
-
-  async function handleDelete() {
-    if (!pendingDelete) return;
-    try {
-      await deleteLead(pendingDelete.id);
-      setPendingDelete(null);
-      load();
-    } catch (err: any) {
-      setError(err.message);
-      setPendingDelete(null);
     }
   }
 
@@ -208,7 +194,6 @@ export function LeadsListPage() {
                 <td>{lead.followUpCount ?? 0}</td>
                 <td className="row-actions" onClick={(e) => e.stopPropagation()}>
                   <Link to={`/leads/${lead.id}/edit`} className="btn-link">Edit</Link>
-                  <button className="btn-link btn-danger-link" onClick={() => setPendingDelete(lead)}>Delete</button>
                 </td>
               </tr>
             ))}
@@ -221,16 +206,6 @@ export function LeadsListPage() {
         <span>Page {page} of {totalPages} ({total} leads)</span>
         <button className="btn" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</button>
       </div>
-
-      {pendingDelete && (
-        <ConfirmDialog
-          title="Delete lead"
-          message={`Are you sure you want to delete this lead for "${pendingDelete.customer.companyName}"? This cannot be undone from the UI.`}
-          confirmLabel="Delete"
-          onConfirm={handleDelete}
-          onCancel={() => setPendingDelete(null)}
-        />
-      )}
     </div>
   );
 }

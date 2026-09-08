@@ -6,6 +6,7 @@ const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', end: true },
   { to: '/leads', label: 'Leads', end: false },
   { to: '/customers', label: 'Customers', end: false },
+  { to: '/admin', label: 'Admin', end: false },
 ];
 
 export function Sidebar() {

@@ -217,3 +217,7 @@ export function createCustomer(data: CustomerInput): Promise<Customer> {
 export function updateCustomer(id: number, data: CustomerInput): Promise<Customer> {
   return request(`/customers/${id}`, { method: 'PUT', body: JSON.stringify(data) });
 }
+
+export function deleteCustomer(id: number): Promise<void> {
+  return request(`/customers/${id}`, { method: 'DELETE' });
+}
