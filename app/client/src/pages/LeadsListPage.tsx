@@ -133,32 +133,36 @@ export function LeadsListPage() {
         </div>
       )}
 
-      <form className="filter-bar" onSubmit={handleSearchSubmit}>
-        <input
-          type="text"
-          placeholder="Search company, contact, email, phone, enquiry #..."
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          className="search-input"
-        />
-        <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }}>
-          <option value="">All statuses</option>
-          <option value="OpenPipeline">Open Pipeline (Active)</option>
-          {meta?.followUpStatus.map((s) => <option key={s} value={s}>{s}</option>)}
-        </select>
-        <select value={priority} onChange={(e) => { setPriority(e.target.value); setPage(1); }}>
-          <option value="">All priorities</option>
-          {meta?.priority.map((p) => <option key={p} value={p}>{p}</option>)}
-        </select>
-        <select value={leadType} onChange={(e) => { setLeadType(e.target.value); setPage(1); }}>
-          <option value="">All lead types</option>
-          {meta?.leadType.map((t) => <option key={t} value={t}>{t}</option>)}
-        </select>
-        <select value={assignedTo} onChange={(e) => { setAssignedTo(e.target.value); setPage(1); }}>
-          <option value="">All assignees</option>
-          {meta?.assignees.map((a) => <option key={a} value={a}>{a}</option>)}
-        </select>
-        <button type="submit" className="btn">Search</button>
+      <form className="filter-bar filter-bar-stacked" onSubmit={handleSearchSubmit}>
+        <div className="filter-row">
+          <input
+            type="text"
+            placeholder="Search company, contact, email, phone, enquiry #..."
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            className="search-input"
+          />
+          <button type="submit" className="btn">Search</button>
+        </div>
+        <div className="filter-row">
+          <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }}>
+            <option value="">All statuses</option>
+            <option value="OpenPipeline">Open Pipeline (Active)</option>
+            {meta?.followUpStatus.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+          <select value={priority} onChange={(e) => { setPriority(e.target.value); setPage(1); }}>
+            <option value="">All priorities</option>
+            {meta?.priority.map((p) => <option key={p} value={p}>{p}</option>)}
+          </select>
+          <select value={leadType} onChange={(e) => { setLeadType(e.target.value); setPage(1); }}>
+            <option value="">All lead types</option>
+            {meta?.leadType.map((t) => <option key={t} value={t}>{t}</option>)}
+          </select>
+          <select value={assignedTo} onChange={(e) => { setAssignedTo(e.target.value); setPage(1); }}>
+            <option value="">All assignees</option>
+            {meta?.assignees.map((a) => <option key={a} value={a}>{a}</option>)}
+          </select>
+        </div>
       </form>
 
       {error && <div className="alert alert-error">{error}</div>}

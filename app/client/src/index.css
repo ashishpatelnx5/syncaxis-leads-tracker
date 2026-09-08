@@ -207,6 +207,18 @@ a:hover { text-decoration: underline; }
 
 .search-input { flex: 1; min-width: 220px; }
 
+.filter-bar-stacked {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.filter-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .filter-banner {
   display: flex;
   align-items: center;
