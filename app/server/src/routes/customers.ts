@@ -84,8 +84,19 @@ router.get('/:id', async (req: Request, res: Response) => {
   }
 });
 
+// CustomerCode is a system-assigned identifier (CUST-000001, CUST-000002, ...)
+// - never accepted from the client, only ever set here on creation.
+async function generateNextCustomerCode(pool: any): Promise<string> {
+  const result = await pool.request().query(`
+    SELECT MAX(CAST(SUBSTRING(CustomerCode, 6, 10) AS INT)) AS MaxNum
+    FROM dbo.Customers
+    WHERE CustomerCode LIKE 'CUST-%' AND ISNUMERIC(SUBSTRING(CustomerCode, 6, 10)) = 1
+  `);
+  const nextNum = (result.recordset[0].MaxNum || 0) + 1;
+  return `CUST-${String(nextNum).padStart(6, '0')}`;
+}
+
 function bindCustomerInputs(request: any, body: any) {
-  request.input('customerCode', sql.NVarChar, body.customerCode || null);
   request.input('companyName', sql.NVarChar, body.companyName);
   request.input('department', sql.NVarChar, body.department || null);
   request.input('contactPersonName', sql.NVarChar, body.contactPersonName || null);
@@ -107,7 +118,10 @@ router.post('/', async (req: Request, res: Response) => {
 
   try {
     const pool = await getPool();
+    const customerCode = await generateNextCustomerCode(pool);
+
     const request = pool.request();
+    request.input('customerCode', sql.NVarChar, customerCode);
     bindCustomerInputs(request, req.body);
     const result = await request.query(`
       INSERT INTO dbo.Customers (CustomerCode, CompanyName, Department, ContactPersonName, Email, Phone, Country, State, City)
@@ -123,7 +137,8 @@ router.post('/', async (req: Request, res: Response) => {
   }
 });
 
-// PUT /api/customers/:id - update
+// PUT /api/customers/:id - update (CustomerCode is intentionally not
+// updatable here - it's not in bindCustomerInputs or the SET clause below)
 router.put('/:id', async (req: Request, res: Response) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id)) return res.status(400).json({ error: 'Invalid customer id' });
@@ -144,7 +159,7 @@ router.put('/:id', async (req: Request, res: Response) => {
     bindCustomerInputs(request, req.body);
     await request.query(`
       UPDATE dbo.Customers SET
-        CustomerCode = @customerCode, CompanyName = @companyName, Department = @department,
+        CompanyName = @companyName, Department = @department,
         ContactPersonName = @contactPersonName, Email = @email, Phone = @phone,
         Country = @country, State = @state, City = @city, UpdatedAt = SYSUTCDATETIME()
       WHERE Id = @id

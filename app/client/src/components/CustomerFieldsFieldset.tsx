@@ -16,13 +16,9 @@ export function CustomerFieldsFieldset({ value, onChange, meta }: CustomerFields
       <fieldset>
         <legend>Company &amp; Contact</legend>
         <div className="form-grid form-grid-2col">
-          <label>
+          <label className="field-span-2">
             Company Name *
             <input required value={value.companyName || ''} onChange={(e) => onChange('companyName', e.target.value)} />
-          </label>
-          <label>
-            Customer Code
-            <input value={value.customerCode || ''} onChange={(e) => onChange('customerCode', e.target.value)} />
           </label>
           <label>
             Contact Person
@@ -39,6 +35,15 @@ export function CustomerFieldsFieldset({ value, onChange, meta }: CustomerFields
           <label>
             Phone
             <input value={value.phone || ''} onChange={(e) => onChange('phone', e.target.value)} />
+          </label>
+          <label className="field-narrow">
+            Customer Code
+            <input
+              disabled
+              value={value.customerCode || ''}
+              placeholder="Auto-generated on save"
+              title="System-assigned - can't be changed"
+            />
           </label>
         </div>
       </fieldset>
