@@ -9,11 +9,16 @@ const NAV_ITEMS = [
   { to: '/admin', label: 'Admin', end: false },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  open: boolean;
+  onNavigate: () => void;
+}
+
+export function Sidebar({ open, onNavigate }: SidebarProps) {
   const { logout } = useAuth();
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar${open ? ' open' : ''}`}>
       <div className="sidebar-top">
         <Logo />
       </div>
@@ -28,7 +33,7 @@ export function Sidebar() {
 
       <nav className="sidebar-nav">
         {NAV_ITEMS.map((item) => (
-          <NavLink key={item.to} to={item.to} end={item.end} className={({ isActive }) => (isActive ? 'active' : '')}>
+          <NavLink key={item.to} to={item.to} end={item.end} className={({ isActive }) => (isActive ? 'active' : '')} onClick={onNavigate}>
             {item.label}
           </NavLink>
         ))}
