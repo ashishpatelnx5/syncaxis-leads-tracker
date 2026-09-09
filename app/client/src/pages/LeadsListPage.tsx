@@ -17,6 +17,9 @@ function describeSpecialFilter(params: URLSearchParams): string | null {
   if (params.get('status') === 'OpenPipeline') return 'Open pipeline (active leads)';
   if (params.get('priority')) return `Priority: ${params.get('priority')}`;
   if (params.get('leadType')) return `Lead type: ${params.get('leadType')}`;
+  if (params.get('hasValue') === 'true') return 'Leads with a price value';
+  if (params.get('hasValue') === 'false') return 'Leads missing a price value';
+  if (params.get('preQuotation') === 'true') return 'Quotation not sent yet';
   return null;
 }
 
@@ -48,6 +51,8 @@ export function LeadsListPage() {
   // dashboard drill-through link and are shown in the "Filtered by" banner above.
   const priority = searchParams.get('priority') || undefined;
   const leadType = searchParams.get('leadType') || undefined;
+  const hasValue = searchParams.get('hasValue') === 'true' ? true : searchParams.get('hasValue') === 'false' ? false : undefined;
+  const preQuotation = searchParams.get('preQuotation') === 'true' || undefined;
 
   const [meta, setMeta] = useState<MetaResponse | null>(null);
   const [exporting, setExporting] = useState(false);
@@ -61,7 +66,7 @@ export function LeadsListPage() {
     setError(null);
     fetchLeads({
       q, status, priority, leadType, assignedTo, leadGeneratedBy,
-      cardCollected, inquirySource, productInterest, overdue, followUpDueDays,
+      cardCollected, inquirySource, productInterest, overdue, followUpDueDays, hasValue, preQuotation,
       sortBy, sortDir,
       page, pageSize,
     })
@@ -72,7 +77,7 @@ export function LeadsListPage() {
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, status, priority, leadType, assignedTo, leadGeneratedBy, cardCollected, inquirySource, productInterest, overdue, followUpDueDays, sortBy, sortDir, page, pageSize]);
+  }, [q, status, priority, leadType, assignedTo, leadGeneratedBy, cardCollected, inquirySource, productInterest, overdue, followUpDueDays, hasValue, preQuotation, sortBy, sortDir, page, pageSize]);
 
   useEffect(() => {
     load();
@@ -90,7 +95,7 @@ export function LeadsListPage() {
     try {
       await exportLeads({
         q, status, priority, leadType, assignedTo, leadGeneratedBy,
-        cardCollected, inquirySource, productInterest, overdue, followUpDueDays,
+        cardCollected, inquirySource, productInterest, overdue, followUpDueDays, hasValue, preQuotation,
         sortBy, sortDir,
       });
     } catch (err: any) {

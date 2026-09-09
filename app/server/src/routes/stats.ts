@@ -25,7 +25,12 @@ router.get('/', async (_req: Request, res: Response) => {
           AND NextFollowUpDate < CAST(SYSUTCDATETIME() AS DATE) AND FollowUpStatus NOT IN ${TERMINAL_STATUSES_SQL}) AS OverdueCount,
         (SELECT ISNULL(SUM(LeadValue), 0) FROM dbo.Leads WHERE IsDeleted = 0) AS TotalLeadValue,
         (SELECT ISNULL(SUM(LeadValue), 0) FROM dbo.Leads WHERE IsDeleted = 0 AND FollowUpStatus NOT IN ${TERMINAL_STATUSES_SQL}) AS OpenPipelineValue,
-        (SELECT ISNULL(SUM(LeadValue), 0) FROM dbo.Leads WHERE IsDeleted = 0 AND FollowUpStatus = 'Won') AS WonValue
+        (SELECT ISNULL(SUM(LeadValue), 0) FROM dbo.Leads WHERE IsDeleted = 0 AND FollowUpStatus = 'Won') AS WonValue,
+        (SELECT COUNT(*) FROM dbo.Leads WHERE IsDeleted = 0 AND LeadValue IS NOT NULL AND LeadValue > 0) AS LeadsWithValueCount,
+        (SELECT COUNT(*) FROM dbo.Leads WHERE IsDeleted = 0 AND (LeadValue IS NULL OR LeadValue = 0)) AS LeadsWithoutValueCount,
+        (SELECT COUNT(*) FROM dbo.Leads WHERE IsDeleted = 0 AND FollowUpStatus = 'Quotation Sent') AS QuotationSentCount,
+        (SELECT COUNT(*) FROM dbo.Leads WHERE IsDeleted = 0 AND FollowUpStatus = 'Awaiting Response') AS AwaitingResponseCount,
+        (SELECT COUNT(*) FROM dbo.Leads WHERE IsDeleted = 0 AND FollowUpStatus IN ('Not Contacted','Contacted','Meeting Scheduled')) AS NotYetQuotedCount
     `);
     const row = result.recordset[0];
     const wonCount = row.WonCount as number;
@@ -47,6 +52,11 @@ router.get('/', async (_req: Request, res: Response) => {
       openPipelineValue: Number(row.OpenPipelineValue),
       wonValue,
       avgDealSize: wonCount > 0 ? wonValue / wonCount : 0,
+      leadsWithValueCount: row.LeadsWithValueCount,
+      leadsWithoutValueCount: row.LeadsWithoutValueCount,
+      quotationSentCount: row.QuotationSentCount,
+      awaitingResponseCount: row.AwaitingResponseCount,
+      notYetQuotedCount: row.NotYetQuotedCount,
     });
   } catch (err) {
     console.error(err);
@@ -61,7 +71,7 @@ router.get('/dashboard', async (_req: Request, res: Response) => {
   try {
     const pool = await getPool();
 
-    const [byStatusResult, byPriorityResult, bySourceResult, byAssigneeResult, byProductResult, trendResult] = await Promise.all([
+    const [byStatusResult, byPriorityResult, bySourceResult, byAssigneeResult, byGeneratorResult, byProductResult, trendResult] = await Promise.all([
       pool.request().query(`
         SELECT FollowUpStatus, COUNT(*) AS Cnt FROM dbo.Leads WHERE IsDeleted = 0 GROUP BY FollowUpStatus
       `),
@@ -78,6 +88,12 @@ router.get('/dashboard', async (_req: Request, res: Response) => {
         SELECT ISNULL(NULLIF(LTRIM(RTRIM(EnquiryAssignedTo)), ''), 'Unassigned') AS Assignee, COUNT(*) AS Cnt
         FROM dbo.Leads WHERE IsDeleted = 0
         GROUP BY ISNULL(NULLIF(LTRIM(RTRIM(EnquiryAssignedTo)), ''), 'Unassigned')
+        ORDER BY Cnt DESC
+      `),
+      pool.request().query(`
+        SELECT ISNULL(NULLIF(LTRIM(RTRIM(LeadGeneratedBy)), ''), 'Unknown') AS Generator, COUNT(*) AS Cnt
+        FROM dbo.Leads WHERE IsDeleted = 0
+        GROUP BY ISNULL(NULLIF(LTRIM(RTRIM(LeadGeneratedBy)), ''), 'Unknown')
         ORDER BY Cnt DESC
       `),
       pool.request().query(`
@@ -120,6 +136,11 @@ router.get('/dashboard', async (_req: Request, res: Response) => {
     const otherAssigneeCount = assigneeRows.slice(TOP_N).reduce((sum, r) => sum + r.count, 0);
     if (otherAssigneeCount > 0) byAssignee.push({ assignee: 'Other', count: otherAssigneeCount });
 
+    const generatorRows = byGeneratorResult.recordset.map((r) => ({ generator: r.Generator as string, count: r.Cnt as number }));
+    const byGenerator = generatorRows.slice(0, TOP_N);
+    const otherGeneratorCount = generatorRows.slice(TOP_N).reduce((sum, r) => sum + r.count, 0);
+    if (otherGeneratorCount > 0) byGenerator.push({ generator: 'Other', count: otherGeneratorCount });
+
     const byProduct = byProductResult.recordset.slice(0, 8).map((r) => ({
       product: r.Product as string,
       total: r.Total as number,
@@ -129,7 +150,7 @@ router.get('/dashboard', async (_req: Request, res: Response) => {
 
     const monthlyTrend = trendResult.recordset.map((r) => ({ month: r.Month, received: r.Received, ordered: r.Ordered }));
 
-    res.json({ byStatus, byPriority, bySource, byAssignee, byProduct, monthlyTrend });
+    res.json({ byStatus, byPriority, bySource, byAssignee, byGenerator, byProduct, monthlyTrend });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to fetch dashboard stats' });

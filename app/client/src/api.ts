@@ -57,6 +57,11 @@ export interface Stats {
   openPipelineValue: number;
   wonValue: number;
   avgDealSize: number;
+  leadsWithValueCount: number;
+  leadsWithoutValueCount: number;
+  quotationSentCount: number;
+  awaitingResponseCount: number;
+  notYetQuotedCount: number;
 }
 
 export function fetchStats(): Promise<Stats> {
@@ -68,6 +73,7 @@ export interface DashboardStats {
   byPriority: { priority: string; count: number }[];
   bySource: { source: string; count: number }[];
   byAssignee: { assignee: string; count: number }[];
+  byGenerator: { generator: string; count: number }[];
   byProduct: { product: string; total: number; won: number; lost: number }[];
   monthlyTrend: { month: string; received: number; ordered: number }[];
 }
@@ -89,6 +95,8 @@ export interface LeadFilters {
   productInterest?: string;
   overdue?: boolean;
   followUpDueDays?: number;
+  hasValue?: boolean;
+  preQuotation?: boolean;
   page?: number;
   pageSize?: number;
   sortBy?: string;

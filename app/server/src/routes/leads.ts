@@ -43,7 +43,7 @@ function isValidEnum(value: unknown, options: readonly string[]): boolean {
 // the given request. Shared so the export endpoint always matches whatever
 // the list endpoint would return for the same query params.
 function applyLeadFilters(request: any, query: Record<string, string>): string[] {
-  const { q, status, priority, leadType, assignedTo, leadGeneratedBy, customerId, cardCollected, inquirySource, productInterest, overdue, followUpDueDays } = query;
+  const { q, status, priority, leadType, assignedTo, leadGeneratedBy, customerId, cardCollected, inquirySource, productInterest, overdue, followUpDueDays, hasValue, preQuotation } = query;
   const conditions: string[] = ['L.IsDeleted = 0'];
 
   if (q) {
@@ -98,6 +98,14 @@ function applyLeadFilters(request: any, query: Record<string, string>): string[]
       'L.NextFollowUpDate IS NOT NULL AND L.NextFollowUpDate BETWEEN CAST(SYSUTCDATETIME() AS DATE) AND DATEADD(DAY, @followUpDueDays, CAST(SYSUTCDATETIME() AS DATE))'
     );
     request.input('followUpDueDays', sql.Int, Math.max(0, parseInt(followUpDueDays, 10) || 0));
+  }
+  if (hasValue === 'true') {
+    conditions.push('L.LeadValue IS NOT NULL AND L.LeadValue > 0');
+  } else if (hasValue === 'false') {
+    conditions.push('(L.LeadValue IS NULL OR L.LeadValue = 0)');
+  }
+  if (preQuotation === 'true') {
+    conditions.push(`L.FollowUpStatus IN ('Not Contacted','Contacted','Meeting Scheduled')`);
   }
 
   return conditions;
