@@ -6,15 +6,17 @@ interface CustomerFieldsFieldsetProps {
   meta: MetaResponse | null;
 }
 
-// The full set of fields for the standalone Customer Master form: grouped
-// into logical sections with a 2-column grid, and Country/State/City backed
-// by a datalist of values already in use (still free-text, so a genuinely new
-// location isn't blocked - it just won't autocomplete until someone's used it).
+// The full set of fields for the standalone Customer Master form, grouped into
+// "Company Details" (identity + where they're based) and "Contact Details"
+// (who to reach and how) - each a 2-column grid. Country/State/City are
+// backed by a datalist of values already in use (still free-text, so a
+// genuinely new location isn't blocked - it just won't autocomplete until
+// someone's used it).
 export function CustomerFieldsFieldset({ value, onChange, meta }: CustomerFieldsFieldsetProps) {
   return (
     <>
       <fieldset>
-        <legend>Company &amp; Contact</legend>
+        <legend>Company Details</legend>
         <div className="form-grid form-grid-2col">
           <label className="field-narrow">
             Customer Code
@@ -39,27 +41,9 @@ export function CustomerFieldsFieldset({ value, onChange, meta }: CustomerFields
             />
           </label>
           <label>
-            Contact Person
-            <input value={value.contactPersonName || ''} onChange={(e) => onChange('contactPersonName', e.target.value)} />
-          </label>
-          <label>
             Department
             <input value={value.department || ''} onChange={(e) => onChange('department', e.target.value)} />
           </label>
-          <label>
-            Email
-            <input type="email" value={value.email || ''} onChange={(e) => onChange('email', e.target.value)} />
-          </label>
-          <label>
-            Phone
-            <input value={value.phone || ''} onChange={(e) => onChange('phone', e.target.value)} />
-          </label>
-        </div>
-      </fieldset>
-
-      <fieldset>
-        <legend>Location</legend>
-        <div className="form-grid form-grid-2col">
           <label>
             Country
             <input list="meta-countries" value={value.country || ''} onChange={(e) => onChange('country', e.target.value)} />
@@ -80,6 +64,24 @@ export function CustomerFieldsFieldset({ value, onChange, meta }: CustomerFields
             <datalist id="meta-cities">
               {meta?.cities.map((v) => <option key={v} value={v} />)}
             </datalist>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Contact Details</legend>
+        <div className="form-grid form-grid-2col">
+          <label>
+            Contact Person
+            <input value={value.contactPersonName || ''} onChange={(e) => onChange('contactPersonName', e.target.value)} />
+          </label>
+          <label>
+            Email
+            <input type="email" value={value.email || ''} onChange={(e) => onChange('email', e.target.value)} />
+          </label>
+          <label>
+            Phone
+            <input value={value.phone || ''} onChange={(e) => onChange('phone', e.target.value)} />
           </label>
         </div>
       </fieldset>
