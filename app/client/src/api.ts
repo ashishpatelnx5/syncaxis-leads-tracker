@@ -82,6 +82,7 @@ export interface LeadFilters {
   priority?: string;
   leadType?: string;
   assignedTo?: string;
+  leadGeneratedBy?: string;
   customerId?: number;
   cardCollected?: string;
   inquirySource?: string;

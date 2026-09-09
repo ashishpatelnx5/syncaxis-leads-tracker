@@ -21,6 +21,7 @@ const LEAD_SELECT_BASE = `
 `;
 
 const SORTABLE_COLUMNS: Record<string, string> = {
+  EnquiryNumber: 'L.EnquiryNumber',
   CompanyName: 'C.CompanyName',
   NextFollowUpDate: 'L.NextFollowUpDate',
   UpdatedAt: 'L.UpdatedAt',
@@ -28,6 +29,10 @@ const SORTABLE_COLUMNS: Record<string, string> = {
   Priority: 'L.Priority',
   FollowUpStatus: 'L.FollowUpStatus',
   LeadValue: 'L.LeadValue',
+  ProductInterest: 'L.ProductInterest',
+  ApplicationDetail: 'L.ApplicationDetail',
+  LeadGeneratedBy: 'L.LeadGeneratedBy',
+  EnquiryAssignedTo: 'L.EnquiryAssignedTo',
 };
 
 function isValidEnum(value: unknown, options: readonly string[]): boolean {
@@ -38,7 +43,7 @@ function isValidEnum(value: unknown, options: readonly string[]): boolean {
 // the given request. Shared so the export endpoint always matches whatever
 // the list endpoint would return for the same query params.
 function applyLeadFilters(request: any, query: Record<string, string>): string[] {
-  const { q, status, priority, leadType, assignedTo, customerId, cardCollected, inquirySource, productInterest, overdue, followUpDueDays } = query;
+  const { q, status, priority, leadType, assignedTo, leadGeneratedBy, customerId, cardCollected, inquirySource, productInterest, overdue, followUpDueDays } = query;
   const conditions: string[] = ['L.IsDeleted = 0'];
 
   if (q) {
@@ -64,6 +69,10 @@ function applyLeadFilters(request: any, query: Record<string, string>): string[]
   if (assignedTo) {
     conditions.push('L.EnquiryAssignedTo = @assignedTo');
     request.input('assignedTo', sql.NVarChar, assignedTo);
+  }
+  if (leadGeneratedBy) {
+    conditions.push('L.LeadGeneratedBy = @leadGeneratedBy');
+    request.input('leadGeneratedBy', sql.NVarChar, leadGeneratedBy);
   }
   if (customerId) {
     conditions.push('L.CustomerId = @customerId');
