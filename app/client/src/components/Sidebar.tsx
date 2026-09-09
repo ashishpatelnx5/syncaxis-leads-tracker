@@ -1,12 +1,13 @@
 import { NavLink } from 'react-router-dom';
 import { Logo } from './Logo';
 import { useAuth } from '../auth/AuthContext';
+import { HomeIcon, LeadsIcon, CustomersIcon, AdminIcon, LogoutIcon } from './icons';
 
 const NAV_ITEMS = [
-  { to: '/', label: 'Dashboard', end: true },
-  { to: '/leads', label: 'Leads', end: false },
-  { to: '/customers', label: 'Customers', end: false },
-  { to: '/admin', label: 'Admin', end: false },
+  { to: '/', label: 'Dashboard', end: true, Icon: HomeIcon },
+  { to: '/leads', label: 'Leads', end: false, Icon: LeadsIcon },
+  { to: '/customers', label: 'Customers', end: false, Icon: CustomersIcon },
+  { to: '/admin', label: 'Admin', end: false, Icon: AdminIcon },
 ];
 
 interface SidebarProps {
@@ -28,13 +29,16 @@ export function Sidebar({ open, onNavigate }: SidebarProps) {
           <span className="sidebar-avatar">S</span>
           <span>syncaxis</span>
         </div>
-        <button className="btn sidebar-signout" onClick={logout}>Sign out</button>
+        <button className="sidebar-icon-btn" onClick={logout} title="Sign out" aria-label="Sign out">
+          <LogoutIcon />
+        </button>
       </div>
 
       <nav className="sidebar-nav">
-        {NAV_ITEMS.map((item) => (
-          <NavLink key={item.to} to={item.to} end={item.end} className={({ isActive }) => (isActive ? 'active' : '')} onClick={onNavigate}>
-            {item.label}
+        {NAV_ITEMS.map(({ to, label, end, Icon }) => (
+          <NavLink key={to} to={to} end={end} className={({ isActive }) => (isActive ? 'active' : '')} onClick={onNavigate}>
+            <Icon />
+            {label}
           </NavLink>
         ))}
       </nav>

@@ -9,10 +9,14 @@
   --color-primary-dark: #1746c2;
   --color-danger: #d1394a;
   --color-danger-bg: #fdecee;
-  --color-sidebar-bg: #101d38;
-  --color-sidebar-bg-hover: #17284a;
-  --color-sidebar-text: #aab4c8;
-  --color-sidebar-text-active: #ffffff;
+  --color-sidebar-bg: #ffffff;
+  --color-sidebar-border: #e7e9f0;
+  --color-sidebar-text: #6b7280;
+  --color-sidebar-text-hover: #1f2733;
+  --color-sidebar-hover-bg: #f3f4f8;
+  --color-sidebar-active-bg: #eef0fe;
+  --color-sidebar-active-text: #3d43c9;
+  --color-brand-dark: #101d38;
   --color-good: #1c8a45;
   --color-bad: #c22a3c;
   --accent-blue: #2a78d6;
@@ -24,9 +28,47 @@
   --series-1: #2a78d6;
   --series-2: #eb6834;
   --chart-surface: #ffffff;
+  --color-subtle-bg: #eef1f6;
   --radius: 8px;
   font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  color-scheme: light;
+  color-scheme: light dark;
+}
+
+/* Follows the browser/OS light-dark preference automatically - no manual
+   toggle. Every color in the app is one of these tokens (or derived from
+   one), so redefining them here is enough to re-theme the whole app. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #0f1115;
+    --color-surface: #171a21;
+    --color-surface-hover: #1f232c;
+    --color-border: #2a2e38;
+    --color-text: #e7e9ee;
+    --color-text-muted: #9aa1ae;
+    --color-primary: #5b8cff;
+    --color-primary-dark: #82a6ff;
+    --color-danger: #f27686;
+    --color-danger-bg: #3a1e22;
+    --color-sidebar-bg: #14161c;
+    --color-sidebar-border: #262933;
+    --color-sidebar-text: #9aa1ae;
+    --color-sidebar-text-hover: #e7e9ee;
+    --color-sidebar-hover-bg: #1f232c;
+    --color-sidebar-active-bg: rgba(91, 140, 255, 0.16);
+    --color-sidebar-active-text: #a8c3ff;
+    --color-good: #4ade80;
+    --color-bad: #f87171;
+    --accent-blue: #5b8cff;
+    --accent-green: #34d399;
+    --accent-red: #f87171;
+    --accent-amber: #fbbf24;
+    --accent-teal: #2dd4bf;
+    --accent-violet: #a78bfa;
+    --series-1: #5b8cff;
+    --series-2: #fb923c;
+    --chart-surface: #171a21;
+    --color-subtle-bg: rgba(255, 255, 255, 0.06);
+  }
 }
 
 * { box-sizing: border-box; }
@@ -64,6 +106,7 @@ a:hover { text-decoration: underline; }
   width: 250px;
   flex-shrink: 0;
   background: var(--color-sidebar-bg);
+  border-right: 1px solid var(--color-sidebar-border);
   color: var(--color-sidebar-text);
   display: flex;
   flex-direction: column;
@@ -78,6 +121,7 @@ a:hover { text-decoration: underline; }
   align-items: center;
   gap: 10px;
   background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius);
   padding: 10px 12px;
 }
@@ -101,7 +145,7 @@ a:hover { text-decoration: underline; }
   gap: 8px;
   font-size: 0.85rem;
   font-weight: 600;
-  color: #fff;
+  color: var(--color-text);
 }
 
 .sidebar-avatar {
@@ -117,14 +161,20 @@ a:hover { text-decoration: underline; }
   font-weight: 700;
 }
 
-.sidebar-signout {
-  background: transparent;
-  border-color: #2a3345;
-  color: var(--color-sidebar-text);
-  font-size: 0.78rem;
-  padding: 5px 10px;
+.sidebar-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
 }
-.sidebar-signout:hover { background: var(--color-sidebar-bg-hover); }
+.sidebar-icon-btn:hover { background: var(--color-sidebar-hover-bg); color: var(--color-text); }
+.sidebar-icon-btn svg { width: 16px; height: 16px; }
 
 .sidebar-nav {
   display: flex;
@@ -133,14 +183,18 @@ a:hover { text-decoration: underline; }
 }
 
 .sidebar-nav a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   color: var(--color-sidebar-text);
   font-size: 0.9rem;
   font-weight: 600;
   padding: 10px 12px;
-  border-radius: var(--radius);
+  border-radius: 10px;
 }
-.sidebar-nav a:hover { text-decoration: none; background: var(--color-sidebar-bg-hover); color: #fff; }
-.sidebar-nav a.active { background: var(--color-primary); color: #fff; }
+.sidebar-nav a svg { width: 18px; height: 18px; flex-shrink: 0; }
+.sidebar-nav a:hover { text-decoration: none; background: var(--color-sidebar-hover-bg); color: var(--color-sidebar-text-hover); }
+.sidebar-nav a.active { background: var(--color-sidebar-active-bg); color: var(--color-sidebar-active-text); }
 
 .app-main {
   flex: 1;
@@ -270,7 +324,7 @@ a:hover { text-decoration: underline; }
 
 table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--color-border); vertical-align: top; }
-th { background: #f9fafb; font-weight: 600; color: var(--color-text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; }
+th { background: var(--color-subtle-bg); font-weight: 600; color: var(--color-text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; }
 
 .sortable-header { cursor: pointer; user-select: none; white-space: nowrap; }
 .sortable-header:hover { color: var(--color-text); background: var(--color-surface-hover); }
@@ -372,7 +426,7 @@ tbody tr:last-child td { border-bottom: none; }
   border-radius: 999px;
   font-size: 0.78rem;
   font-weight: 600;
-  background: #eef1f6;
+  background: var(--color-subtle-bg);
   color: var(--color-text);
   white-space: nowrap;
 }
@@ -388,6 +442,23 @@ tbody tr:last-child td { border-bottom: none; }
 .priority-hot { background: #fdeae5; color: #c8501f; }
 .priority-warm { background: #fdf1d6; color: #a3660a; }
 .priority-cold { background: #e4f1fb; color: #1a6faf; }
+
+/* These badges use flat pastel colors rather than tokens, so they need
+   their own dark-mode overrides (tinted, translucent, lighter text). */
+@media (prefers-color-scheme: dark) {
+  .status-not-contacted { background: rgba(148, 163, 184, 0.16); color: #cbd5e1; }
+  .status-contacted { background: rgba(91, 140, 255, 0.18); color: #a8c3ff; }
+  .status-meeting-scheduled { background: rgba(217, 119, 6, 0.2); color: #fbbf24; }
+  .status-quotation-sent { background: rgba(167, 139, 250, 0.2); color: #c4b5fd; }
+  .status-awaiting-response { background: rgba(217, 119, 6, 0.2); color: #fdba74; }
+  .status-won { background: rgba(52, 211, 153, 0.18); color: #6ee7b7; }
+  .status-lost { background: rgba(248, 113, 113, 0.18); color: #fca5a5; }
+  .status-not-relevant { background: rgba(148, 163, 184, 0.12); color: #9aa1ae; }
+
+  .priority-hot { background: rgba(251, 146, 60, 0.2); color: #fdba74; }
+  .priority-warm { background: rgba(217, 119, 6, 0.2); color: #fbbf24; }
+  .priority-cold { background: rgba(56, 189, 248, 0.18); color: #7dd3fc; }
+}
 
 .lead-form fieldset, .followup-form {
   background: var(--color-surface);
@@ -640,7 +711,7 @@ input:disabled {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-sidebar-bg);
+  background: var(--color-brand-dark);
   padding: 24px;
 }
 
@@ -765,7 +836,7 @@ input:disabled {
 .breakdown-bar-track {
   height: 8px;
   border-radius: 4px;
-  background: #eef1f6;
+  background: var(--color-subtle-bg);
   overflow: hidden;
 }
 
@@ -851,6 +922,7 @@ input:disabled {
     align-items: center;
     gap: 12px;
     background: var(--color-sidebar-bg);
+    border-bottom: 1px solid var(--color-sidebar-border);
     padding: 10px 16px;
     position: sticky;
     top: 0;
@@ -864,14 +936,14 @@ input:disabled {
   .hamburger-btn {
     background: none;
     border: none;
-    color: #fff;
+    color: var(--color-text);
     font-size: 1.3rem;
     line-height: 1;
     cursor: pointer;
     padding: 4px 6px;
     border-radius: var(--radius);
   }
-  .hamburger-btn:hover { background: var(--color-sidebar-bg-hover); }
+  .hamburger-btn:hover { background: var(--color-sidebar-hover-bg); }
 
   .app-main {
     padding: 16px;
