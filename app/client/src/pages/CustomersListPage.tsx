@@ -3,14 +3,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import { fetchCustomers } from '../api';
 import type { Customer } from '../types';
 import { formatLocation } from '../utils/format';
-
-const PAGE_SIZE = 25;
+import { PageSizeSelect } from '../components/PageSizeSelect';
 
 export function CustomersListPage() {
   const navigate = useNavigate();
   const [items, setItems] = useState<Customer[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [q, setQ] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -18,14 +18,14 @@ export function CustomersListPage() {
   const load = useCallback(() => {
     setLoading(true);
     setError(null);
-    fetchCustomers(page, PAGE_SIZE, q)
+    fetchCustomers(page, pageSize, q)
       .then((res) => {
         setItems(res.items);
         setTotal(res.total);
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [page, q]);
+  }, [page, pageSize, q]);
 
   useEffect(() => {
     load();
@@ -37,7 +37,7 @@ export function CustomersListPage() {
     load();
   }
 
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
     <div className="page">
@@ -91,9 +91,12 @@ export function CustomersListPage() {
       </div>
 
       <div className="pagination">
-        <button className="btn" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Previous</button>
-        <span>Page {page} of {totalPages} ({total} customers)</span>
-        <button className="btn" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</button>
+        <PageSizeSelect value={pageSize} onChange={(size) => { setPageSize(size); setPage(1); }} />
+        <div className="pagination-controls">
+          <button className="btn" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Previous</button>
+          <span>Page {page} of {totalPages} ({total} customers)</span>
+          <button className="btn" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</button>
+        </div>
       </div>
     </div>
   );

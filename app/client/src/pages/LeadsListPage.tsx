@@ -3,9 +3,8 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { fetchLeads, fetchMeta, exportLeads } from '../api';
 import type { Lead, MetaResponse } from '../types';
 import { StatusBadge } from '../components/StatusBadge';
+import { PageSizeSelect } from '../components/PageSizeSelect';
 import { formatInr } from '../utils/format';
-
-const PAGE_SIZE = 25;
 
 // Extra filters that arrive only via a dashboard drill-through link (no dropdown
 // control for them) - shown as a "Filtered by" banner with a way to clear them.
@@ -24,6 +23,7 @@ export function LeadsListPage() {
   const [items, setItems] = useState<Lead[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -58,7 +58,7 @@ export function LeadsListPage() {
       q, status, priority, leadType, assignedTo, leadGeneratedBy,
       cardCollected, inquirySource, productInterest, overdue, followUpDueDays,
       sortBy, sortDir,
-      page, pageSize: PAGE_SIZE,
+      page, pageSize,
     })
       .then((res) => {
         setItems(res.items);
@@ -67,7 +67,7 @@ export function LeadsListPage() {
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, status, priority, leadType, assignedTo, leadGeneratedBy, cardCollected, inquirySource, productInterest, overdue, followUpDueDays, sortBy, sortDir, page]);
+  }, [q, status, priority, leadType, assignedTo, leadGeneratedBy, cardCollected, inquirySource, productInterest, overdue, followUpDueDays, sortBy, sortDir, page, pageSize]);
 
   useEffect(() => {
     load();
@@ -118,7 +118,7 @@ export function LeadsListPage() {
     );
   }
 
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
     <div className="page">
@@ -228,9 +228,12 @@ export function LeadsListPage() {
       </div>
 
       <div className="pagination">
-        <button className="btn" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Previous</button>
-        <span>Page {page} of {totalPages} ({total} leads)</span>
-        <button className="btn" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</button>
+        <PageSizeSelect value={pageSize} onChange={(size) => { setPageSize(size); setPage(1); }} />
+        <div className="pagination-controls">
+          <button className="btn" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Previous</button>
+          <span>Page {page} of {totalPages} ({total} leads)</span>
+          <button className="btn" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</button>
+        </div>
       </div>
     </div>
   );

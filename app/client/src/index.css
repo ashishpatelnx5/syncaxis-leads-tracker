@@ -275,12 +275,29 @@ tbody tr:last-child td { border-bottom: none; }
 .pagination {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: 16px;
   margin-top: 16px;
   color: var(--color-text-muted);
   font-size: 0.9rem;
 }
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.page-size-select {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+.page-size-select select { padding: 6px 8px; }
 
 .badge {
   display: inline-block;

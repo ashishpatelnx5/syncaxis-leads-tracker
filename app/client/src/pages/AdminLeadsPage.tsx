@@ -5,13 +5,13 @@ import type { Lead } from '../types';
 import { StatusBadge, PriorityBadge } from '../components/StatusBadge';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { AdminTabs } from '../components/AdminTabs';
-
-const PAGE_SIZE = 25;
+import { PageSizeSelect } from '../components/PageSizeSelect';
 
 export function AdminLeadsPage() {
   const [items, setItems] = useState<Lead[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [q, setQ] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,14 +20,14 @@ export function AdminLeadsPage() {
   const load = useCallback(() => {
     setLoading(true);
     setError(null);
-    fetchLeads({ q, page, pageSize: PAGE_SIZE })
+    fetchLeads({ q, page, pageSize })
       .then((res) => {
         setItems(res.items);
         setTotal(res.total);
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [q, page]);
+  }, [q, page, pageSize]);
 
   useEffect(() => {
     load();
@@ -51,7 +51,7 @@ export function AdminLeadsPage() {
     }
   }
 
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
     <div className="page">
@@ -114,9 +114,12 @@ export function AdminLeadsPage() {
       </div>
 
       <div className="pagination">
-        <button className="btn" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Previous</button>
-        <span>Page {page} of {totalPages} ({total} leads)</span>
-        <button className="btn" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</button>
+        <PageSizeSelect value={pageSize} onChange={(size) => { setPageSize(size); setPage(1); }} />
+        <div className="pagination-controls">
+          <button className="btn" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Previous</button>
+          <span>Page {page} of {totalPages} ({total} leads)</span>
+          <button className="btn" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</button>
+        </div>
       </div>
 
       {pendingDelete && (
