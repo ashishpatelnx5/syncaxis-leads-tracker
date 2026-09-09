@@ -96,7 +96,7 @@ export interface LeadFilters {
   overdue?: boolean;
   followUpDueDays?: number;
   hasValue?: boolean;
-  preQuotation?: boolean;
+  hasErpRef?: boolean;
   page?: number;
   pageSize?: number;
   sortBy?: string;

@@ -66,10 +66,13 @@ export function DashboardPage() {
           </div>
 
           <h2 className="dashboard-section-title">Quotation Pipeline</h2>
+          <p className="hint-text" style={{ marginTop: -8, marginBottom: 12 }}>
+            Quotations are generated in SourcePro ERP - this app only mirrors the ERP Lead Number as a reference, so "sent" below means an ERP reference is on file, not the manually-set status.
+          </p>
           <div className="kpi-grid">
-            <KpiTile label="Quotation Sent" value={String(stats.quotationSentCount)} sublabel="quote out, no reply logged yet" to={`/leads?status=${encodeURIComponent('Quotation Sent')}`} accent="violet" />
-            <KpiTile label="Awaiting Response" value={String(stats.awaitingResponseCount)} sublabel="under negotiation" to={`/leads?status=${encodeURIComponent('Awaiting Response')}`} accent="amber" />
-            <KpiTile label="Quotation Not Sent" value={String(stats.notYetQuotedCount)} sublabel="not contacted / contacted / meeting scheduled" to="/leads?preQuotation=true" accent="teal" />
+            <KpiTile label="Quotation Sent" value={String(stats.quotationSentCount)} sublabel="has an ERP Lead Number on file" to="/leads?hasErpRef=true" accent="violet" />
+            <KpiTile label="Awaiting Response" value={String(stats.awaitingResponseCount)} sublabel="under negotiation (per follow-up status)" to={`/leads?status=${encodeURIComponent('Awaiting Response')}`} accent="amber" />
+            <KpiTile label="Quotation Not Sent" value={String(stats.notYetQuotedCount)} sublabel="no ERP reference yet" to="/leads?hasErpRef=false" accent="teal" />
           </div>
 
           <h2 className="dashboard-section-title">Operational Health</h2>

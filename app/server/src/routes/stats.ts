@@ -28,9 +28,9 @@ router.get('/', async (_req: Request, res: Response) => {
         (SELECT ISNULL(SUM(LeadValue), 0) FROM dbo.Leads WHERE IsDeleted = 0 AND FollowUpStatus = 'Won') AS WonValue,
         (SELECT COUNT(*) FROM dbo.Leads WHERE IsDeleted = 0 AND LeadValue IS NOT NULL AND LeadValue > 0) AS LeadsWithValueCount,
         (SELECT COUNT(*) FROM dbo.Leads WHERE IsDeleted = 0 AND (LeadValue IS NULL OR LeadValue = 0)) AS LeadsWithoutValueCount,
-        (SELECT COUNT(*) FROM dbo.Leads WHERE IsDeleted = 0 AND FollowUpStatus = 'Quotation Sent') AS QuotationSentCount,
-        (SELECT COUNT(*) FROM dbo.Leads WHERE IsDeleted = 0 AND FollowUpStatus = 'Awaiting Response') AS AwaitingResponseCount,
-        (SELECT COUNT(*) FROM dbo.Leads WHERE IsDeleted = 0 AND FollowUpStatus IN ('Not Contacted','Contacted','Meeting Scheduled')) AS NotYetQuotedCount
+        (SELECT COUNT(*) FROM dbo.Leads WHERE IsDeleted = 0 AND ErpLeadNumber IS NOT NULL AND LTRIM(RTRIM(ErpLeadNumber)) <> '') AS QuotationSentCount,
+        (SELECT COUNT(*) FROM dbo.Leads WHERE IsDeleted = 0 AND (ErpLeadNumber IS NULL OR LTRIM(RTRIM(ErpLeadNumber)) = '')) AS NotYetQuotedCount,
+        (SELECT COUNT(*) FROM dbo.Leads WHERE IsDeleted = 0 AND FollowUpStatus = 'Awaiting Response') AS AwaitingResponseCount
     `);
     const row = result.recordset[0];
     const wonCount = row.WonCount as number;

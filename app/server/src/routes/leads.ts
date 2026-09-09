@@ -43,7 +43,7 @@ function isValidEnum(value: unknown, options: readonly string[]): boolean {
 // the given request. Shared so the export endpoint always matches whatever
 // the list endpoint would return for the same query params.
 function applyLeadFilters(request: any, query: Record<string, string>): string[] {
-  const { q, status, priority, leadType, assignedTo, leadGeneratedBy, customerId, cardCollected, inquirySource, productInterest, overdue, followUpDueDays, hasValue, preQuotation } = query;
+  const { q, status, priority, leadType, assignedTo, leadGeneratedBy, customerId, cardCollected, inquirySource, productInterest, overdue, followUpDueDays, hasValue, hasErpRef } = query;
   const conditions: string[] = ['L.IsDeleted = 0'];
 
   if (q) {
@@ -104,8 +104,13 @@ function applyLeadFilters(request: any, query: Record<string, string>): string[]
   } else if (hasValue === 'false') {
     conditions.push('(L.LeadValue IS NULL OR L.LeadValue = 0)');
   }
-  if (preQuotation === 'true') {
-    conditions.push(`L.FollowUpStatus IN ('Not Contacted','Contacted','Meeting Scheduled')`);
+  // The actual quotation lives in the SourcePro ERP system - this app only
+  // mirrors it via ErpLeadNumber, so "quotation sent" is judged by that
+  // reference being on file, not by the manually-set FollowUpStatus.
+  if (hasErpRef === 'true') {
+    conditions.push(`L.ErpLeadNumber IS NOT NULL AND LTRIM(RTRIM(L.ErpLeadNumber)) <> ''`);
+  } else if (hasErpRef === 'false') {
+    conditions.push(`(L.ErpLeadNumber IS NULL OR LTRIM(RTRIM(L.ErpLeadNumber)) = '')`);
   }
 
   return conditions;
