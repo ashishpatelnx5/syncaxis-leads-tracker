@@ -201,9 +201,17 @@ export function searchCustomers(q: string, pageSize = 10): Promise<CustomerListR
   return request(`/customers?${params.toString()}`);
 }
 
-export function fetchCustomers(page = 1, pageSize = 25, q = ''): Promise<CustomerListResponse> {
+export function fetchCustomers(
+  page = 1,
+  pageSize = 25,
+  q = '',
+  sortBy?: string,
+  sortDir?: 'asc' | 'desc'
+): Promise<CustomerListResponse> {
   const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
   if (q) params.set('q', q);
+  if (sortBy) params.set('sortBy', sortBy);
+  if (sortDir) params.set('sortDir', sortDir);
   return request(`/customers?${params.toString()}`);
 }
 

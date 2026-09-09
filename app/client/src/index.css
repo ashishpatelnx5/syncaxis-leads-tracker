@@ -259,6 +259,54 @@ th { background: #f9fafb; font-weight: 600; color: var(--color-text-muted); font
 .sortable-header:hover { color: var(--color-text); background: var(--color-surface-hover); }
 .sort-indicator { display: inline-block; margin-left: 4px; font-size: 0.7rem; opacity: 0.4; }
 .sort-indicator.active { opacity: 1; color: var(--color-primary); }
+
+.header-filter { position: relative; display: inline-block; margin-left: 4px; }
+.header-filter-btn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0 2px;
+  font-size: 0.75rem;
+  line-height: 1;
+  color: var(--color-text-muted);
+  opacity: 0.55;
+}
+.header-filter-btn:hover { opacity: 1; }
+.header-filter-btn.active { opacity: 1; color: var(--color-primary); }
+.header-filter-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 20;
+  margin-top: 4px;
+  min-width: 180px;
+  max-height: 260px;
+  overflow-y: auto;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+  padding: 4px;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 400;
+}
+.header-filter-dropdown button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 6px 10px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+.header-filter-dropdown button:hover { background: var(--color-surface-hover); }
+.header-filter-dropdown button.selected { background: var(--color-primary); color: #fff; }
+
 tbody tr:last-child td { border-bottom: none; }
 .clickable-row { cursor: pointer; }
 .clickable-row:hover { background: var(--color-surface-hover); }

@@ -10,13 +10,25 @@ const CUSTOMER_SELECT_BASE = `
   FROM dbo.Customers C
 `;
 
+// Maps a client-facing sort key to the SQL expression to order by. LeadCount
+// is a computed subquery column, not a plain table column, so it's ordered by
+// the same subquery expression rather than an alias.
+const CUSTOMER_SORTABLE_COLUMNS: Record<string, string> = {
+  CompanyName: 'C.CompanyName',
+  ContactPersonName: 'C.ContactPersonName',
+  City: 'C.City',
+  LeadCount: '(SELECT COUNT(*) FROM dbo.Leads L WHERE L.CustomerId = C.Id AND L.IsDeleted = 0)',
+};
+
 // GET /api/customers?q=&limit= - search for the lead-form picker and the customer list page
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const { q, page = '1', pageSize = '25' } = req.query as Record<string, string>;
+    const { q, page = '1', pageSize = '25', sortBy = 'CompanyName', sortDir = 'asc' } = req.query as Record<string, string>;
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const size = Math.min(50, Math.max(1, parseInt(pageSize, 10) || 25));
     const offset = (pageNum - 1) * size;
+    const orderColumn = CUSTOMER_SORTABLE_COLUMNS[sortBy] || CUSTOMER_SORTABLE_COLUMNS.CompanyName;
+    const orderDir = sortDir === 'desc' ? 'DESC' : 'ASC';
 
     const pool = await getPool();
     const conditions = ['C.IsDeleted = 0'];
@@ -41,7 +53,7 @@ router.get('/', async (req: Request, res: Response) => {
     const result = await dataRequest.query(`
       ${CUSTOMER_SELECT_BASE}
       ${whereClause}
-      ORDER BY C.CompanyName ASC
+      ORDER BY ${orderColumn} ${orderDir}
       OFFSET @offset ROWS FETCH NEXT @size ROWS ONLY
     `);
 
