@@ -8,7 +8,9 @@ export const EMPTY_CUSTOMER: CustomerInput = {
   email: null,
   phone: null,
   gstin: null,
+  address: null,
   country: null,
   state: null,
   city: null,
+  pincode: null,
 };

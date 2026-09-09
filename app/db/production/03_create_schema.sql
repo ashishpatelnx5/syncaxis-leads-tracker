@@ -26,9 +26,11 @@ CREATE TABLE dbo.Customers (
     Email             NVARCHAR(200) NULL,
     Phone             NVARCHAR(50)  NULL,
     GSTIN             NVARCHAR(15)  NULL,
+    Address           NVARCHAR(500) NULL,
     Country           NVARCHAR(100) NULL,
     State             NVARCHAR(100) NULL,
     City              NVARCHAR(100) NULL,
+    Pincode           NVARCHAR(10)  NULL,
     IsDeleted         BIT           NOT NULL CONSTRAINT DF_Customers_IsDeleted DEFAULT 0,
     CreatedAt         DATETIME2     NOT NULL CONSTRAINT DF_Customers_CreatedAt DEFAULT SYSUTCDATETIME(),
     UpdatedAt         DATETIME2     NOT NULL CONSTRAINT DF_Customers_UpdatedAt DEFAULT SYSUTCDATETIME()

@@ -496,6 +496,19 @@ tbody tr:last-child td { border-bottom: none; }
 
 .field-narrow { max-width: 180px; }
 
+.field-group-label {
+  grid-column: 1 / -1;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  margin: 6px 0 -6px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--color-border);
+}
+.field-group-label:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+
 label {
   display: flex;
   flex-direction: column;

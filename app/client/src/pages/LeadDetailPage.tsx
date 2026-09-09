@@ -100,6 +100,7 @@ export function LeadDetailPage() {
           <Field label="Email" value={lead.customer.email && <a href={`mailto:${lead.customer.email}`}>{lead.customer.email}</a>} />
           <Field label="Phone" value={lead.customer.phone && <a href={`tel:${lead.customer.phone}`}>{lead.customer.phone}</a>} />
           <Field label="Card Collected" value={lead.cardCollected} />
+          <Field label="Address" value={lead.customer.address} />
           <Field label="Location" value={formatLocation(lead.customer)} />
         </section>
 

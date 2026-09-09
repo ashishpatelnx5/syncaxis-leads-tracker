@@ -50,6 +50,7 @@ export function CustomerDetailPage() {
           <Field label="Contact Person" value={customer.contactPersonName} />
           <Field label="Email" value={customer.email && <a href={`mailto:${customer.email}`}>{customer.email}</a>} />
           <Field label="Phone" value={customer.phone && <a href={`tel:${customer.phone}`}>{customer.phone}</a>} />
+          <Field label="Address" value={customer.address} />
           <Field label="Location" value={formatLocation(customer)} />
         </section>
       </div>

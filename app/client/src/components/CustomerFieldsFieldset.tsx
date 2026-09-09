@@ -7,11 +7,11 @@ interface CustomerFieldsFieldsetProps {
 }
 
 // The full set of fields for the standalone Customer Master form, grouped into
-// "Company Details" (identity + where they're based) and "Contact Details"
-// (who to reach and how) - each a 2-column grid. Country/State/City are
-// backed by a datalist of values already in use (still free-text, so a
-// genuinely new location isn't blocked - it just won't autocomplete until
-// someone's used it).
+// "Company Details" (identity, GSTIN, and a Location sub-group with address/
+// city/state/country/PIN) and "Contact Details" (who to reach, how, and which
+// department) - each a 2-column grid. City/State/Country are backed by a
+// datalist of values already in use (still free-text, so a genuinely new
+// location isn't blocked - it just won't autocomplete until someone's used it).
 export function CustomerFieldsFieldset({ value, onChange, meta }: CustomerFieldsFieldsetProps) {
   return (
     <>
@@ -40,15 +40,17 @@ export function CustomerFieldsFieldset({ value, onChange, meta }: CustomerFields
               placeholder="e.g. 27ABCDE1234F1Z5"
             />
           </label>
-          <label>
-            Department
-            <input value={value.department || ''} onChange={(e) => onChange('department', e.target.value)} />
+
+          <div className="field-group-label">Location</div>
+          <label className="field-span-2">
+            Company Address
+            <textarea rows={2} value={value.address || ''} onChange={(e) => onChange('address', e.target.value)} />
           </label>
           <label>
-            Country
-            <input list="meta-countries" value={value.country || ''} onChange={(e) => onChange('country', e.target.value)} />
-            <datalist id="meta-countries">
-              {meta?.countries.map((v) => <option key={v} value={v} />)}
+            City
+            <input list="meta-cities" value={value.city || ''} onChange={(e) => onChange('city', e.target.value)} />
+            <datalist id="meta-cities">
+              {meta?.cities.map((v) => <option key={v} value={v} />)}
             </datalist>
           </label>
           <label>
@@ -59,11 +61,15 @@ export function CustomerFieldsFieldset({ value, onChange, meta }: CustomerFields
             </datalist>
           </label>
           <label>
-            City
-            <input list="meta-cities" value={value.city || ''} onChange={(e) => onChange('city', e.target.value)} />
-            <datalist id="meta-cities">
-              {meta?.cities.map((v) => <option key={v} value={v} />)}
+            Country
+            <input list="meta-countries" value={value.country || ''} onChange={(e) => onChange('country', e.target.value)} />
+            <datalist id="meta-countries">
+              {meta?.countries.map((v) => <option key={v} value={v} />)}
             </datalist>
+          </label>
+          <label>
+            PIN
+            <input value={value.pincode || ''} onChange={(e) => onChange('pincode', e.target.value)} maxLength={10} />
           </label>
         </div>
       </fieldset>
@@ -74,6 +80,10 @@ export function CustomerFieldsFieldset({ value, onChange, meta }: CustomerFields
           <label>
             Contact Person
             <input value={value.contactPersonName || ''} onChange={(e) => onChange('contactPersonName', e.target.value)} />
+          </label>
+          <label>
+            Department
+            <input value={value.department || ''} onChange={(e) => onChange('department', e.target.value)} />
           </label>
           <label>
             Email

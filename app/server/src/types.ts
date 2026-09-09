@@ -32,9 +32,11 @@ export interface Customer {
   email: string | null;
   phone: string | null;
   gstin: string | null;
+  address: string | null;
   country: string | null;
   state: string | null;
   city: string | null;
+  pincode: string | null;
   createdAt: string;
   updatedAt: string;
   leadCount?: number;
@@ -48,9 +50,11 @@ export interface CustomerInput {
   email?: string | null;
   phone?: string | null;
   gstin?: string | null;
+  address?: string | null;
   country?: string | null;
   state?: string | null;
   city?: string | null;
+  pincode?: string | null;
 }
 
 export interface Lead {

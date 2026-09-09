@@ -5,8 +5,9 @@ import { Lead, Followup, Customer } from './types';
 export const CUSTOMER_JOIN_COLUMNS = `
     C.Id AS Cust_Id, C.CustomerCode AS Cust_CustomerCode, C.CompanyName AS Cust_CompanyName,
     C.Department AS Cust_Department, C.ContactPersonName AS Cust_ContactPersonName,
-    C.Email AS Cust_Email, C.Phone AS Cust_Phone, C.GSTIN AS Cust_GSTIN, C.Country AS Cust_Country,
-    C.State AS Cust_State, C.City AS Cust_City, C.CreatedAt AS Cust_CreatedAt, C.UpdatedAt AS Cust_UpdatedAt
+    C.Email AS Cust_Email, C.Phone AS Cust_Phone, C.GSTIN AS Cust_GSTIN, C.Address AS Cust_Address,
+    C.Country AS Cust_Country, C.State AS Cust_State, C.City AS Cust_City, C.Pincode AS Cust_Pincode,
+    C.CreatedAt AS Cust_CreatedAt, C.UpdatedAt AS Cust_UpdatedAt
 `;
 
 function toIsoDate(v: unknown): string | null {
@@ -31,9 +32,11 @@ export function mapCustomerRow(row: any): Customer {
     email: row.Email,
     phone: row.Phone,
     gstin: row.GSTIN,
+    address: row.Address,
     country: row.Country,
     state: row.State,
     city: row.City,
+    pincode: row.Pincode,
     createdAt: toIsoDateTime(row.CreatedAt),
     updatedAt: toIsoDateTime(row.UpdatedAt),
     leadCount: row.LeadCount !== undefined ? Number(row.LeadCount) : undefined,
@@ -55,9 +58,11 @@ export function mapLeadRow(row: any): Lead {
       email: row.Cust_Email,
       phone: row.Cust_Phone,
       gstin: row.Cust_GSTIN,
+      address: row.Cust_Address,
       country: row.Cust_Country,
       state: row.Cust_State,
       city: row.Cust_City,
+      pincode: row.Cust_Pincode,
       createdAt: toIsoDateTime(row.Cust_CreatedAt),
       updatedAt: toIsoDateTime(row.Cust_UpdatedAt),
     },

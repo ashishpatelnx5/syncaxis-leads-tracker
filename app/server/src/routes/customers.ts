@@ -115,9 +115,11 @@ function bindCustomerInputs(request: any, body: any) {
   request.input('email', sql.NVarChar, body.email || null);
   request.input('phone', sql.NVarChar, body.phone || null);
   request.input('gstin', sql.NVarChar, body.gstin ? String(body.gstin).trim().toUpperCase() : null);
+  request.input('address', sql.NVarChar, body.address || null);
   request.input('country', sql.NVarChar, body.country || null);
   request.input('state', sql.NVarChar, body.state || null);
   request.input('city', sql.NVarChar, body.city || null);
+  request.input('pincode', sql.NVarChar, body.pincode || null);
 }
 
 const GSTIN_PATTERN = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
@@ -148,9 +150,9 @@ router.post('/', async (req: Request, res: Response) => {
     request.input('customerCode', sql.NVarChar, customerCode);
     bindCustomerInputs(request, req.body);
     const result = await request.query(`
-      INSERT INTO dbo.Customers (CustomerCode, CompanyName, Department, ContactPersonName, Email, Phone, GSTIN, Country, State, City)
+      INSERT INTO dbo.Customers (CustomerCode, CompanyName, Department, ContactPersonName, Email, Phone, GSTIN, Address, Country, State, City, Pincode)
       OUTPUT INSERTED.Id
-      VALUES (@customerCode, @companyName, @department, @contactPersonName, @email, @phone, @gstin, @country, @state, @city)
+      VALUES (@customerCode, @companyName, @department, @contactPersonName, @email, @phone, @gstin, @address, @country, @state, @city, @pincode)
     `);
     const newId = result.recordset[0].Id;
     const customerResult = await pool.request().input('id', sql.Int, newId).query(`${CUSTOMER_SELECT_BASE} WHERE C.Id = @id`);
@@ -186,8 +188,8 @@ router.put('/:id', async (req: Request, res: Response) => {
     await request.query(`
       UPDATE dbo.Customers SET
         CompanyName = @companyName, Department = @department,
-        ContactPersonName = @contactPersonName, Email = @email, Phone = @phone, GSTIN = @gstin,
-        Country = @country, State = @state, City = @city, UpdatedAt = SYSUTCDATETIME()
+        ContactPersonName = @contactPersonName, Email = @email, Phone = @phone, GSTIN = @gstin, Address = @address,
+        Country = @country, State = @state, City = @city, Pincode = @pincode, UpdatedAt = SYSUTCDATETIME()
       WHERE Id = @id
     `);
 
