@@ -31,44 +31,48 @@
   --color-subtle-bg: #eef1f6;
   --radius: 8px;
   font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  color-scheme: light dark;
+  color-scheme: light;
 }
 
-/* Follows the browser/OS light-dark preference automatically - no manual
-   toggle. Every color in the app is one of these tokens (or derived from
-   one), so redefining them here is enough to re-theme the whole app. */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg: #0f1115;
-    --color-surface: #171a21;
-    --color-surface-hover: #1f232c;
-    --color-border: #2a2e38;
-    --color-text: #e7e9ee;
-    --color-text-muted: #9aa1ae;
-    --color-primary: #5b8cff;
-    --color-primary-dark: #82a6ff;
-    --color-danger: #f27686;
-    --color-danger-bg: #3a1e22;
-    --color-sidebar-bg: #14161c;
-    --color-sidebar-border: #262933;
-    --color-sidebar-text: #9aa1ae;
-    --color-sidebar-text-hover: #e7e9ee;
-    --color-sidebar-hover-bg: #1f232c;
-    --color-sidebar-active-bg: rgba(91, 140, 255, 0.16);
-    --color-sidebar-active-text: #a8c3ff;
-    --color-good: #4ade80;
-    --color-bad: #f87171;
-    --accent-blue: #5b8cff;
-    --accent-green: #34d399;
-    --accent-red: #f87171;
-    --accent-amber: #fbbf24;
-    --accent-teal: #2dd4bf;
-    --accent-violet: #a78bfa;
-    --series-1: #5b8cff;
-    --series-2: #fb923c;
-    --chart-surface: #171a21;
-    --color-subtle-bg: rgba(255, 255, 255, 0.06);
-  }
+/* Theme resolution happens in JS (ThemeContext): "system" reads
+   prefers-color-scheme once and stores nothing, "light"/"dark" is an
+   explicit user override persisted to localStorage - either way, JS always
+   stamps the resolved value onto <html data-theme="..."> as the single
+   source of truth, so plain attribute selectors are enough here (no
+   @media prefers-color-scheme needed, which would otherwise fight an
+   explicit override). Every color in the app is one of these tokens, so
+   redefining them here is enough to re-theme the whole app. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-bg: #0f1115;
+  --color-surface: #171a21;
+  --color-surface-hover: #1f232c;
+  --color-border: #2a2e38;
+  --color-text: #e7e9ee;
+  --color-text-muted: #9aa1ae;
+  --color-primary: #5b8cff;
+  --color-primary-dark: #82a6ff;
+  --color-danger: #f27686;
+  --color-danger-bg: #3a1e22;
+  --color-sidebar-bg: #14161c;
+  --color-sidebar-border: #262933;
+  --color-sidebar-text: #9aa1ae;
+  --color-sidebar-text-hover: #e7e9ee;
+  --color-sidebar-hover-bg: #1f232c;
+  --color-sidebar-active-bg: rgba(91, 140, 255, 0.16);
+  --color-sidebar-active-text: #a8c3ff;
+  --color-good: #4ade80;
+  --color-bad: #f87171;
+  --accent-blue: #5b8cff;
+  --accent-green: #34d399;
+  --accent-red: #f87171;
+  --accent-amber: #fbbf24;
+  --accent-teal: #2dd4bf;
+  --accent-violet: #a78bfa;
+  --series-1: #5b8cff;
+  --series-2: #fb923c;
+  --chart-surface: #171a21;
+  --color-subtle-bg: rgba(255, 255, 255, 0.06);
 }
 
 * { box-sizing: border-box; }
@@ -159,6 +163,12 @@ a:hover { text-decoration: underline; }
   justify-content: center;
   font-size: 0.8rem;
   font-weight: 700;
+}
+
+.sidebar-icon-group {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .sidebar-icon-btn {
@@ -445,20 +455,18 @@ tbody tr:last-child td { border-bottom: none; }
 
 /* These badges use flat pastel colors rather than tokens, so they need
    their own dark-mode overrides (tinted, translucent, lighter text). */
-@media (prefers-color-scheme: dark) {
-  .status-not-contacted { background: rgba(148, 163, 184, 0.16); color: #cbd5e1; }
-  .status-contacted { background: rgba(91, 140, 255, 0.18); color: #a8c3ff; }
-  .status-meeting-scheduled { background: rgba(217, 119, 6, 0.2); color: #fbbf24; }
-  .status-quotation-sent { background: rgba(167, 139, 250, 0.2); color: #c4b5fd; }
-  .status-awaiting-response { background: rgba(217, 119, 6, 0.2); color: #fdba74; }
-  .status-won { background: rgba(52, 211, 153, 0.18); color: #6ee7b7; }
-  .status-lost { background: rgba(248, 113, 113, 0.18); color: #fca5a5; }
-  .status-not-relevant { background: rgba(148, 163, 184, 0.12); color: #9aa1ae; }
+:root[data-theme="dark"] .status-not-contacted { background: rgba(148, 163, 184, 0.16); color: #cbd5e1; }
+:root[data-theme="dark"] .status-contacted { background: rgba(91, 140, 255, 0.18); color: #a8c3ff; }
+:root[data-theme="dark"] .status-meeting-scheduled { background: rgba(217, 119, 6, 0.2); color: #fbbf24; }
+:root[data-theme="dark"] .status-quotation-sent { background: rgba(167, 139, 250, 0.2); color: #c4b5fd; }
+:root[data-theme="dark"] .status-awaiting-response { background: rgba(217, 119, 6, 0.2); color: #fdba74; }
+:root[data-theme="dark"] .status-won { background: rgba(52, 211, 153, 0.18); color: #6ee7b7; }
+:root[data-theme="dark"] .status-lost { background: rgba(248, 113, 113, 0.18); color: #fca5a5; }
+:root[data-theme="dark"] .status-not-relevant { background: rgba(148, 163, 184, 0.12); color: #9aa1ae; }
 
-  .priority-hot { background: rgba(251, 146, 60, 0.2); color: #fdba74; }
-  .priority-warm { background: rgba(217, 119, 6, 0.2); color: #fbbf24; }
-  .priority-cold { background: rgba(56, 189, 248, 0.18); color: #7dd3fc; }
-}
+:root[data-theme="dark"] .priority-hot { background: rgba(251, 146, 60, 0.2); color: #fdba74; }
+:root[data-theme="dark"] .priority-warm { background: rgba(217, 119, 6, 0.2); color: #fbbf24; }
+:root[data-theme="dark"] .priority-cold { background: rgba(56, 189, 248, 0.18); color: #7dd3fc; }
 
 .lead-form fieldset, .followup-form {
   background: var(--color-surface);
