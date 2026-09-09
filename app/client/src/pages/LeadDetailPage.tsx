@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { fetchLead, addFollowup, deleteFollowup, fetchMeta } from '../api';
 import type { Lead, Followup, MetaResponse } from '../types';
-import { StatusBadge, PriorityBadge } from '../components/StatusBadge';
+import { StatusBadge, PriorityBadge, ProductBadge } from '../components/StatusBadge';
 import { FollowupTimeline } from '../components/FollowupTimeline';
 import { Field } from '../components/Field';
 import { formatInr, formatLocation } from '../utils/format';
@@ -110,7 +110,7 @@ export function LeadDetailPage() {
           <Field label="Customer Code" value={lead.customer.customerCode} />
           <Field label="Application Category" value={lead.applicationCategory} />
           <Field label="Application Detail" value={lead.applicationDetail} />
-          <Field label="Product Interest" value={lead.productInterest} />
+          <Field label="Product Interest" value={lead.productInterest ? <ProductBadge product={lead.productInterest} /> : null} />
           <Field label="Inquiry Source" value={lead.inquirySource} />
           <Field label="Lead Type" value={lead.leadType} />
           <Field label="Lead Value" value={lead.leadValue !== null ? formatInr(lead.leadValue) : null} />

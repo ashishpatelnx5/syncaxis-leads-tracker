@@ -17,3 +17,16 @@ export function PriorityBadge({ priority }: { priority: Priority }) {
     </span>
   );
 }
+
+function slug(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+}
+
+// Colors loosely follow each brand's own site: Rexroth's deep navy blue,
+// Dobot's teal. Anything without a specific product-<slug> rule below (a
+// new free-text value, since this is datalist-suggested not enum-locked)
+// just falls through to the plain .badge default - never unstyled.
+export function ProductBadge({ product }: { product: string | null }) {
+  if (!product) return <span className="cell-secondary">-</span>;
+  return <span className={`badge product-${slug(product)}`}>{product}</span>;
+}

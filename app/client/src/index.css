@@ -453,6 +453,17 @@ tbody tr:last-child td { border-bottom: none; }
 .priority-warm { background: #fdf1d6; color: #a3660a; }
 .priority-cold { background: #e4f1fb; color: #1a6faf; }
 
+/* Product Interest badges - Rexroth's navy and Dobot's teal loosely follow
+   each brand's own site; the combo gets a two-tone gradient rather than
+   picking one color, since it genuinely is both. */
+.product-rexroth { background: #dce6f5; color: #1a3a66; }
+.product-dobot { background: #d7f5f2; color: #0d7d72; }
+.product-dobot-rexroth { background: linear-gradient(135deg, #0d7d72, #1a3a66); color: #ffffff; }
+.product-vision-system { background: #ece4fb; color: #6d28d9; }
+.product-competitor-visit { background: #fdeae5; color: #c8501f; }
+.product-other { background: #eef1f6; color: #4b5563; }
+.product-not-specified { background: #f0f0f0; color: #7a7a7a; }
+
 /* These badges use flat pastel colors rather than tokens, so they need
    their own dark-mode overrides (tinted, translucent, lighter text). */
 :root[data-theme="dark"] .status-not-contacted { background: rgba(148, 163, 184, 0.16); color: #cbd5e1; }
@@ -467,6 +478,14 @@ tbody tr:last-child td { border-bottom: none; }
 :root[data-theme="dark"] .priority-hot { background: rgba(251, 146, 60, 0.2); color: #fdba74; }
 :root[data-theme="dark"] .priority-warm { background: rgba(217, 119, 6, 0.2); color: #fbbf24; }
 :root[data-theme="dark"] .priority-cold { background: rgba(56, 189, 248, 0.18); color: #7dd3fc; }
+
+:root[data-theme="dark"] .product-rexroth { background: rgba(37, 99, 235, 0.22); color: #93c5fd; }
+:root[data-theme="dark"] .product-dobot { background: rgba(20, 184, 166, 0.2); color: #5eead4; }
+:root[data-theme="dark"] .product-dobot-rexroth { background: linear-gradient(135deg, rgba(20, 184, 166, 0.4), rgba(37, 99, 235, 0.4)); color: #e7e9ee; }
+:root[data-theme="dark"] .product-vision-system { background: rgba(167, 139, 250, 0.2); color: #c4b5fd; }
+:root[data-theme="dark"] .product-competitor-visit { background: rgba(251, 146, 60, 0.2); color: #fdba74; }
+:root[data-theme="dark"] .product-other { background: rgba(148, 163, 184, 0.14); color: #9aa1ae; }
+:root[data-theme="dark"] .product-not-specified { background: rgba(148, 163, 184, 0.1); color: #9aa1ae; }
 
 .lead-form fieldset, .followup-form {
   background: var(--color-surface);

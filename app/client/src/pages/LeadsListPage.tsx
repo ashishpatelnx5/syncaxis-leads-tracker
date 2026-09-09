@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { fetchLeads, fetchMeta, exportLeads } from '../api';
 import type { Lead, MetaResponse } from '../types';
-import { StatusBadge } from '../components/StatusBadge';
+import { StatusBadge, ProductBadge } from '../components/StatusBadge';
 import { PageSizeSelect } from '../components/PageSizeSelect';
 import { HeaderFilterDropdown } from '../components/HeaderFilterDropdown';
 import { formatInr, formatDate } from '../utils/format';
@@ -229,7 +229,7 @@ export function LeadsListPage() {
                   {lead.customer.city && <div className="cell-secondary">{lead.customer.city}{lead.customer.state ? `, ${lead.customer.state}` : ''}</div>}
                 </td>
                 <td><StatusBadge status={lead.followUpStatus} /></td>
-                <td>{lead.productInterest || '-'}</td>
+                <td><ProductBadge product={lead.productInterest} /></td>
                 <td>{lead.applicationDetail || '-'}</td>
                 <td>{lead.leadValue !== null ? formatInr(lead.leadValue) : '-'}</td>
                 <td>{lead.leadGeneratedBy || '-'}</td>
