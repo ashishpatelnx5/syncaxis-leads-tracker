@@ -5,7 +5,7 @@ import { Lead, Followup, Customer } from './types';
 export const CUSTOMER_JOIN_COLUMNS = `
     C.Id AS Cust_Id, C.CustomerCode AS Cust_CustomerCode, C.CompanyName AS Cust_CompanyName,
     C.Department AS Cust_Department, C.ContactPersonName AS Cust_ContactPersonName,
-    C.Email AS Cust_Email, C.Phone AS Cust_Phone, C.Country AS Cust_Country,
+    C.Email AS Cust_Email, C.Phone AS Cust_Phone, C.GSTIN AS Cust_GSTIN, C.Country AS Cust_Country,
     C.State AS Cust_State, C.City AS Cust_City, C.CreatedAt AS Cust_CreatedAt, C.UpdatedAt AS Cust_UpdatedAt
 `;
 
@@ -30,6 +30,7 @@ export function mapCustomerRow(row: any): Customer {
     contactPersonName: row.ContactPersonName,
     email: row.Email,
     phone: row.Phone,
+    gstin: row.GSTIN,
     country: row.Country,
     state: row.State,
     city: row.City,
@@ -53,6 +54,7 @@ export function mapLeadRow(row: any): Lead {
       contactPersonName: row.Cust_ContactPersonName,
       email: row.Cust_Email,
       phone: row.Cust_Phone,
+      gstin: row.Cust_GSTIN,
       country: row.Cust_Country,
       state: row.Cust_State,
       city: row.Cust_City,

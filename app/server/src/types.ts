@@ -31,6 +31,7 @@ export interface Customer {
   contactPersonName: string | null;
   email: string | null;
   phone: string | null;
+  gstin: string | null;
   country: string | null;
   state: string | null;
   city: string | null;
@@ -46,6 +47,7 @@ export interface CustomerInput {
   contactPersonName?: string | null;
   email?: string | null;
   phone?: string | null;
+  gstin?: string | null;
   country?: string | null;
   state?: string | null;
   city?: string | null;

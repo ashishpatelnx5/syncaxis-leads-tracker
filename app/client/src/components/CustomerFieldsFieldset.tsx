@@ -45,6 +45,15 @@ export function CustomerFieldsFieldset({ value, onChange, meta }: CustomerFields
             Phone
             <input value={value.phone || ''} onChange={(e) => onChange('phone', e.target.value)} />
           </label>
+          <label>
+            GSTIN
+            <input
+              value={value.gstin || ''}
+              onChange={(e) => onChange('gstin', e.target.value.toUpperCase())}
+              maxLength={15}
+              placeholder="e.g. 27ABCDE1234F1Z5"
+            />
+          </label>
         </div>
       </fieldset>
 

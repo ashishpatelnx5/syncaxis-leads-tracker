@@ -7,6 +7,7 @@ export const EMPTY_CUSTOMER: CustomerInput = {
   contactPersonName: null,
   email: null,
   phone: null,
+  gstin: null,
   country: null,
   state: null,
   city: null,

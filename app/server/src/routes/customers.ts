@@ -114,9 +114,19 @@ function bindCustomerInputs(request: any, body: any) {
   request.input('contactPersonName', sql.NVarChar, body.contactPersonName || null);
   request.input('email', sql.NVarChar, body.email || null);
   request.input('phone', sql.NVarChar, body.phone || null);
+  request.input('gstin', sql.NVarChar, body.gstin ? String(body.gstin).trim().toUpperCase() : null);
   request.input('country', sql.NVarChar, body.country || null);
   request.input('state', sql.NVarChar, body.state || null);
   request.input('city', sql.NVarChar, body.city || null);
+}
+
+const GSTIN_PATTERN = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
+
+function validateGstin(body: any): string | null {
+  if (!body.gstin) return null;
+  const value = String(body.gstin).trim().toUpperCase();
+  if (!GSTIN_PATTERN.test(value)) return 'Invalid GSTIN - expected a 15-character GST number (e.g. 27ABCDE1234F1Z5)';
+  return null;
 }
 
 // POST /api/customers - create a standalone customer record
@@ -127,6 +137,8 @@ router.post('/', async (req: Request, res: Response) => {
   if (req.body.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(req.body.email).trim())) {
     return res.status(400).json({ error: 'Invalid email address' });
   }
+  const gstinError = validateGstin(req.body);
+  if (gstinError) return res.status(400).json({ error: gstinError });
 
   try {
     const pool = await getPool();
@@ -136,9 +148,9 @@ router.post('/', async (req: Request, res: Response) => {
     request.input('customerCode', sql.NVarChar, customerCode);
     bindCustomerInputs(request, req.body);
     const result = await request.query(`
-      INSERT INTO dbo.Customers (CustomerCode, CompanyName, Department, ContactPersonName, Email, Phone, Country, State, City)
+      INSERT INTO dbo.Customers (CustomerCode, CompanyName, Department, ContactPersonName, Email, Phone, GSTIN, Country, State, City)
       OUTPUT INSERTED.Id
-      VALUES (@customerCode, @companyName, @department, @contactPersonName, @email, @phone, @country, @state, @city)
+      VALUES (@customerCode, @companyName, @department, @contactPersonName, @email, @phone, @gstin, @country, @state, @city)
     `);
     const newId = result.recordset[0].Id;
     const customerResult = await pool.request().input('id', sql.Int, newId).query(`${CUSTOMER_SELECT_BASE} WHERE C.Id = @id`);
@@ -160,6 +172,8 @@ router.put('/:id', async (req: Request, res: Response) => {
   if (req.body.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(req.body.email).trim())) {
     return res.status(400).json({ error: 'Invalid email address' });
   }
+  const gstinError = validateGstin(req.body);
+  if (gstinError) return res.status(400).json({ error: gstinError });
 
   try {
     const pool = await getPool();
@@ -172,7 +186,7 @@ router.put('/:id', async (req: Request, res: Response) => {
     await request.query(`
       UPDATE dbo.Customers SET
         CompanyName = @companyName, Department = @department,
-        ContactPersonName = @contactPersonName, Email = @email, Phone = @phone,
+        ContactPersonName = @contactPersonName, Email = @email, Phone = @phone, GSTIN = @gstin,
         Country = @country, State = @state, City = @city, UpdatedAt = SYSUTCDATETIME()
       WHERE Id = @id
     `);

@@ -61,8 +61,6 @@ export function DashboardPage() {
             <KpiTile label="Won Value" value={formatInr(stats.wonValue)} sublabel={`${stats.wonCount} won leads`} to="/leads?status=Won&sortBy=LeadValue&sortDir=desc" accent="green" />
             <KpiTile label="Average Deal Size" value={formatInr(stats.avgDealSize)} sublabel="per won lead" to="/leads?status=Won&sortBy=LeadValue&sortDir=desc" accent="teal" />
             <KpiTile label="Total Lead Value" value={formatInr(stats.totalLeadValue)} sublabel="all leads valued" to="/leads?sortBy=LeadValue&sortDir=desc" accent="violet" />
-            <KpiTile label="Priced Leads" value={String(stats.leadsWithValueCount)} sublabel="have a lead value set" to="/leads?hasValue=true&sortBy=LeadValue&sortDir=desc" accent="blue" />
-            <KpiTile label="Missing a Value" value={String(stats.leadsWithoutValueCount)} sublabel="no price entered yet" to="/leads?hasValue=false" accent="amber" />
           </div>
 
           <h2 className="dashboard-section-title">Quotation Pipeline</h2>
@@ -73,6 +71,8 @@ export function DashboardPage() {
             <KpiTile label="Quotation Sent" value={String(stats.quotationSentCount)} sublabel="has an ERP Lead Number on file" to="/leads?hasErpRef=true" accent="violet" />
             <KpiTile label="Awaiting Response" value={String(stats.awaitingResponseCount)} sublabel="under negotiation (per follow-up status)" to={`/leads?status=${encodeURIComponent('Awaiting Response')}`} accent="amber" />
             <KpiTile label="Quotation Not Sent" value={String(stats.notYetQuotedCount)} sublabel="no ERP reference yet" to="/leads?hasErpRef=false" accent="teal" />
+            <KpiTile label="Priced Leads" value={String(stats.leadsWithValueCount)} sublabel="have a lead value set" to="/leads?hasValue=true&sortBy=LeadValue&sortDir=desc" accent="blue" />
+            <KpiTile label="Missing a Value" value={String(stats.leadsWithoutValueCount)} sublabel="no price entered yet" to="/leads?hasValue=false" accent="amber" />
           </div>
 
           <h2 className="dashboard-section-title">Operational Health</h2>

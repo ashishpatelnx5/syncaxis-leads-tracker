@@ -21,6 +21,7 @@ CREATE TABLE dbo.Customers (
     ContactPersonName NVARCHAR(200) NULL,
     Email             NVARCHAR(200) NULL,
     Phone             NVARCHAR(50)  NULL,
+    GSTIN             NVARCHAR(15)  NULL,
     Country           NVARCHAR(100) NULL,
     State             NVARCHAR(100) NULL,
     City              NVARCHAR(100) NULL,
