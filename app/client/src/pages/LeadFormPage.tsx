@@ -96,11 +96,11 @@ export function LeadFormPage() {
           {selectedCustomer && (
             <div className="customer-readonly">
               <Field label="Customer Code" value={selectedCustomer.customerCode} />
+              <Field label="GSTIN" value={selectedCustomer.gstin} />
               <Field label="Department" value={selectedCustomer.department} />
               <Field label="Contact Person" value={selectedCustomer.contactPersonName} />
               <Field label="Email" value={selectedCustomer.email} />
               <Field label="Phone" value={selectedCustomer.phone} />
-              <Field label="GSTIN" value={selectedCustomer.gstin} />
               <Field label="Location" value={formatLocation(selectedCustomer)} />
               <Link to={`/customers/${selectedCustomer.id}/edit`} className="btn-link" target="_blank" rel="noopener noreferrer">
                 Edit customer details ↗

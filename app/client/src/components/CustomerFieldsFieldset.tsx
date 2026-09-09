@@ -30,6 +30,15 @@ export function CustomerFieldsFieldset({ value, onChange, meta }: CustomerFields
             <input required value={value.companyName || ''} onChange={(e) => onChange('companyName', e.target.value)} />
           </label>
           <label>
+            GSTIN
+            <input
+              value={value.gstin || ''}
+              onChange={(e) => onChange('gstin', e.target.value.toUpperCase())}
+              maxLength={15}
+              placeholder="e.g. 27ABCDE1234F1Z5"
+            />
+          </label>
+          <label>
             Contact Person
             <input value={value.contactPersonName || ''} onChange={(e) => onChange('contactPersonName', e.target.value)} />
           </label>
@@ -44,15 +53,6 @@ export function CustomerFieldsFieldset({ value, onChange, meta }: CustomerFields
           <label>
             Phone
             <input value={value.phone || ''} onChange={(e) => onChange('phone', e.target.value)} />
-          </label>
-          <label>
-            GSTIN
-            <input
-              value={value.gstin || ''}
-              onChange={(e) => onChange('gstin', e.target.value.toUpperCase())}
-              maxLength={15}
-              placeholder="e.g. 27ABCDE1234F1Z5"
-            />
           </label>
         </div>
       </fieldset>
