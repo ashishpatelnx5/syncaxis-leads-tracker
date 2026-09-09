@@ -748,6 +748,27 @@ input:disabled {
 
 .login-card label { margin-bottom: 14px; }
 
+.password-field { position: relative; }
+.password-field input { width: 100%; padding-right: 38px; }
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+.password-toggle:hover { color: var(--color-text); }
+.password-toggle svg { width: 17px; height: 17px; }
+
 .login-submit { width: 100%; margin-top: 6px; }
 
 .dashboard-section-title {
