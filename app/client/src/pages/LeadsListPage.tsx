@@ -5,7 +5,7 @@ import type { Lead, MetaResponse } from '../types';
 import { StatusBadge, ProductBadge } from '../components/StatusBadge';
 import { PageSizeSelect } from '../components/PageSizeSelect';
 import { HeaderFilterDropdown } from '../components/HeaderFilterDropdown';
-import { formatInr, formatDate } from '../utils/format';
+import { formatInr, formatDate, sortProductInterests } from '../utils/format';
 
 // Extra filters that arrive only via a dashboard drill-through link (no dropdown
 // control for them) - shown as a "Filtered by" banner with a way to clear them.
@@ -186,7 +186,7 @@ export function LeadsListPage() {
               ))}
               {sortableHeader('Product Interest', 'ProductInterest', (
                 <HeaderFilterDropdown
-                  options={meta?.productInterests || []}
+                  options={sortProductInterests(meta?.productInterests || [])}
                   value={productInterest}
                   onChange={(v) => { setProductInterest(v); setPage(1); }}
                   allLabel="All product interests"

@@ -4,7 +4,7 @@ import { createLead, updateLead, fetchLead, fetchMeta, fetchCustomer } from '../
 import type { Lead, MetaResponse, Customer } from '../types';
 import { CustomerPicker } from '../components/CustomerPicker';
 import { Field } from '../components/Field';
-import { formatLocation } from '../utils/format';
+import { formatLocation, sortProductInterests } from '../utils/format';
 
 type LeadFormState = Partial<Lead>;
 
@@ -153,7 +153,7 @@ export function LeadFormPage() {
               Product Interest
               <input list="productInterests" value={leadForm.productInterest || ''} onChange={(e) => setLead('productInterest', e.target.value)} />
               <datalist id="productInterests">
-                {meta?.productInterests.map((v) => <option key={v} value={v} />)}
+                {sortProductInterests(meta?.productInterests || []).map((v) => <option key={v} value={v} />)}
               </datalist>
             </label>
             <label>
