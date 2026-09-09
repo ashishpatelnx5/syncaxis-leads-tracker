@@ -45,7 +45,7 @@ CREATE TABLE dbo.Leads (
     CardCollected       NVARCHAR(20)    NOT NULL CONSTRAINT DF_Leads_CardCollected DEFAULT 'Not Recorded'
         CONSTRAINT CK_Leads_CardCollected CHECK (CardCollected IN ('Yes','No','Photo Only','Not Recorded')),
     FollowUpStatus      NVARCHAR(50)    NOT NULL CONSTRAINT DF_Leads_FollowUpStatus DEFAULT 'Not Contacted'
-        CONSTRAINT CK_Leads_FollowUpStatus CHECK (FollowUpStatus IN ('Not Contacted','Contacted','Meeting Scheduled','Quotation Sent','Won','Lost','Not Relevant')),
+        CONSTRAINT CK_Leads_FollowUpStatus CHECK (FollowUpStatus IN ('Not Contacted','Contacted','Meeting Scheduled','Quotation Sent','Awaiting Response','Won','Lost','Not Relevant')),
     Priority            NVARCHAR(20)    NOT NULL CONSTRAINT DF_Leads_Priority DEFAULT 'Warm'
         CONSTRAINT CK_Leads_Priority CHECK (Priority IN ('Hot','Warm','Cold')),
     InquirySource       NVARCHAR(200)   NULL,

@@ -380,6 +380,7 @@ tbody tr:last-child td { border-bottom: none; }
 .status-contacted { background: #e3edff; color: #1f5eff; }
 .status-meeting-scheduled { background: #fdf1d6; color: #a3660a; }
 .status-quotation-sent { background: #e6e0ff; color: #5b3ecf; }
+.status-awaiting-response { background: #fdeed6; color: #b06a0a; }
 .status-won { background: #dff5e6; color: #1c8a45; }
 .status-lost { background: #fbe3e6; color: #c22a3c; }
 .status-not-relevant { background: #f0f0f0; color: #7a7a7a; }

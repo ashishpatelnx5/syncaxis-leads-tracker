@@ -4,6 +4,7 @@ export type FollowUpStatus =
   | 'Contacted'
   | 'Meeting Scheduled'
   | 'Quotation Sent'
+  | 'Awaiting Response'
   | 'Won'
   | 'Lost'
   | 'Not Relevant';
@@ -89,6 +90,7 @@ export interface MetaResponse {
   inquirySources: string[];
   assignees: string[];
   generators: string[];
+  teamMembers: string[];
   productInterests: string[];
   countries: string[];
   states: string[];

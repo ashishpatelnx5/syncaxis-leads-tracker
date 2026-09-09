@@ -31,6 +31,10 @@ router.get('/', async (_req: Request, res: Response) => {
       distinctValues(pool, 'Customers', 'City'),
     ]);
 
+    // Union of everyone who's ever been an assignee or a lead generator -
+    // the pool offered for "Followed up by" on the follow-up form.
+    const teamMembers = Array.from(new Set([...assignees, ...generators])).sort();
+
     res.json({
       cardCollected: CARD_COLLECTED_OPTIONS,
       followUpStatus: FOLLOW_UP_STATUS_OPTIONS,
@@ -40,6 +44,7 @@ router.get('/', async (_req: Request, res: Response) => {
       inquirySources,
       assignees,
       generators,
+      teamMembers,
       productInterests,
       countries,
       states,

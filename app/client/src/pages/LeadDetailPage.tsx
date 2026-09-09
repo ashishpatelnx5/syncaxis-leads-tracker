@@ -152,7 +152,10 @@ export function LeadDetailPage() {
             </label>
             <label>
               Followed up by
-              <input value={fuBy} onChange={(e) => setFuBy(e.target.value)} placeholder="Your name" />
+              <input list="teamMembers" value={fuBy} onChange={(e) => setFuBy(e.target.value)} placeholder="Your name" />
+              <datalist id="teamMembers">
+                {meta?.teamMembers.map((m) => <option key={m} value={m} />)}
+              </datalist>
             </label>
             <label>
               Update status to

@@ -4,6 +4,7 @@ export const FOLLOW_UP_STATUS_OPTIONS = [
   'Contacted',
   'Meeting Scheduled',
   'Quotation Sent',
+  'Awaiting Response',
   'Won',
   'Lost',
   'Not Relevant',
