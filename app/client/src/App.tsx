@@ -6,6 +6,7 @@ import { LoginPage } from './pages/LoginPage';
 import { Sidebar } from './components/Sidebar';
 import { Logo } from './components/Logo';
 import { DashboardPage } from './pages/DashboardPage';
+import { TeamPerformancePage } from './pages/TeamPerformancePage';
 import { LeadsListPage } from './pages/LeadsListPage';
 import { LeadFormPage } from './pages/LeadFormPage';
 import { LeadDetailPage } from './pages/LeadDetailPage';
@@ -35,6 +36,7 @@ function AppShell() {
           <main className="app-main">
             <Routes>
               <Route path="/" element={<DashboardPage />} />
+              <Route path="/team-performance" element={<TeamPerformancePage />} />
               <Route path="/leads" element={<LeadsListPage />} />
               <Route path="/leads/new" element={<LeadFormPage />} />
               <Route path="/leads/:id" element={<LeadDetailPage />} />

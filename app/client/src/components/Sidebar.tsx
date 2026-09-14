@@ -2,13 +2,14 @@ import { NavLink } from 'react-router-dom';
 import { Logo } from './Logo';
 import { useAuth } from '../auth/AuthContext';
 import { useTheme } from '../theme/ThemeContext';
-import { HomeIcon, LeadsIcon, CustomersIcon, AdminIcon, LogoutIcon, MonitorIcon, SunIcon, MoonIcon } from './icons';
+import { HomeIcon, LeadsIcon, CustomersIcon, AdminIcon, LogoutIcon, MonitorIcon, SunIcon, MoonIcon, TeamPerformanceIcon } from './icons';
 
 const THEME_ICON = { system: MonitorIcon, light: SunIcon, dark: MoonIcon } as const;
 const THEME_LABEL = { system: 'Theme: System (click for Light)', light: 'Theme: Light (click for Dark)', dark: 'Theme: Dark (click for System)' } as const;
 
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', end: true, Icon: HomeIcon },
+  { to: '/team-performance', label: 'Team Performance', end: false, Icon: TeamPerformanceIcon },
   { to: '/leads', label: 'Leads', end: false, Icon: LeadsIcon },
   { to: '/customers', label: 'Customers', end: false, Icon: CustomersIcon },
   { to: '/admin', label: 'Admin', end: false, Icon: AdminIcon },

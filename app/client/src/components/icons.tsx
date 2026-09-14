@@ -48,6 +48,47 @@ export function AdminIcon(props: IconProps) {
   );
 }
 
+export function TeamPerformanceIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M4 20V11M10 20V6M16 20V13M20 4l-6 6-3-3-5 5" />
+    </svg>
+  );
+}
+
+export function FileIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M6 2h8l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" />
+      <path d="M14 2v4h4" />
+    </svg>
+  );
+}
+
+export function ChevronLeftIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M15 5l-7 7 7 7" />
+    </svg>
+  );
+}
+
+export function ChevronRightIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M9 5l7 7-7 7" />
+    </svg>
+  );
+}
+
+export function PlayIcon(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+      <path d="M8 5v14l11-7z" />
+    </svg>
+  );
+}
+
 export function LogoutIcon(props: IconProps) {
   return (
     <svg {...base} {...props}>

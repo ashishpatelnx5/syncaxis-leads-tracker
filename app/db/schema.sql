@@ -6,6 +6,7 @@ SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 GO
 
+IF OBJECT_ID('dbo.LeadAttachments', 'U') IS NOT NULL DROP TABLE dbo.LeadAttachments;
 IF OBJECT_ID('dbo.Followups', 'U') IS NOT NULL DROP TABLE dbo.Followups;
 IF OBJECT_ID('dbo.Leads', 'U') IS NOT NULL DROP TABLE dbo.Leads;
 IF OBJECT_ID('dbo.Customers', 'U') IS NOT NULL DROP TABLE dbo.Customers;
@@ -27,6 +28,7 @@ CREATE TABLE dbo.Customers (
     State             NVARCHAR(100) NULL,
     City              NVARCHAR(100) NULL,
     Pincode           NVARCHAR(10)  NULL,
+    AddedBy           NVARCHAR(200) NULL,
     IsDeleted         BIT           NOT NULL CONSTRAINT DF_Customers_IsDeleted DEFAULT 0,
     CreatedAt         DATETIME2     NOT NULL CONSTRAINT DF_Customers_CreatedAt DEFAULT SYSUTCDATETIME(),
     UpdatedAt         DATETIME2     NOT NULL CONSTRAINT DF_Customers_UpdatedAt DEFAULT SYSUTCDATETIME()
@@ -76,6 +78,24 @@ CREATE TABLE dbo.Followups (
 );
 GO
 
+-- Files attached to a lead (quotes, photos, drawings, etc). The actual bytes
+-- live on disk under <UPLOADS_DIR>/leads/<EnquiryNumber>/<FileName> - this
+-- table just tracks which files belong to which lead. FileName is the
+-- standardized <EnquiryNumber>_<timestamp> name actually on disk (also what's
+-- shown/downloaded-as in the UI) - there's no separate "original upload name"
+-- kept anywhere.
+CREATE TABLE dbo.LeadAttachments (
+    Id                INT IDENTITY(1,1) PRIMARY KEY,
+    LeadId            INT NOT NULL CONSTRAINT FK_LeadAttachments_Leads REFERENCES dbo.Leads(Id) ON DELETE CASCADE,
+    FileName          NVARCHAR(260) NOT NULL,
+    ContentType       NVARCHAR(200) NOT NULL,
+    FileSizeBytes     BIGINT NOT NULL,
+    UploadedBy        NVARCHAR(200) NULL,
+    IsDeleted         BIT NOT NULL CONSTRAINT DF_LeadAttachments_IsDeleted DEFAULT 0,
+    CreatedAt         DATETIME2 NOT NULL CONSTRAINT DF_LeadAttachments_CreatedAt DEFAULT SYSUTCDATETIME()
+);
+GO
+
 CREATE UNIQUE INDEX UX_Customers_CustomerCode ON dbo.Customers(CustomerCode) WHERE CustomerCode IS NOT NULL;
 CREATE INDEX IX_Customers_CompanyName ON dbo.Customers(CompanyName) WHERE IsDeleted = 0;
 CREATE INDEX IX_Customers_Email ON dbo.Customers(Email) WHERE IsDeleted = 0;
@@ -88,4 +108,6 @@ CREATE INDEX IX_Leads_NextFollowUpDate ON dbo.Leads(NextFollowUpDate) WHERE IsDe
 CREATE INDEX IX_Leads_EnquiryAssignedTo ON dbo.Leads(EnquiryAssignedTo) WHERE IsDeleted = 0;
 
 CREATE INDEX IX_Followups_LeadId ON dbo.Followups(LeadId);
+
+CREATE INDEX IX_LeadAttachments_LeadId ON dbo.LeadAttachments(LeadId) WHERE IsDeleted = 0;
 GO

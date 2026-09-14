@@ -8,10 +8,11 @@ interface CustomerFieldsFieldsetProps {
 
 // The full set of fields for the standalone Customer Master form, grouped into
 // "Company Details" (identity, GSTIN, and a Location sub-group with address/
-// city/state/country/PIN) and "Contact Details" (who to reach, how, and which
-// department) - each a 2-column grid. City/State/Country are backed by a
-// datalist of values already in use (still free-text, so a genuinely new
-// location isn't blocked - it just won't autocomplete until someone's used it).
+// city/state/country/PIN), "Contact Details" (who to reach, how, and which
+// department), and "Added By" last - each a 2-column grid except the latter.
+// City/State/Country are backed by a datalist of values already in use (still
+// free-text, so a genuinely new location isn't blocked - it just won't
+// autocomplete until someone's used it).
 export function CustomerFieldsFieldset({ value, onChange, meta }: CustomerFieldsFieldsetProps) {
   return (
     <>
@@ -94,6 +95,17 @@ export function CustomerFieldsFieldset({ value, onChange, meta }: CustomerFields
             <input value={value.phone || ''} onChange={(e) => onChange('phone', e.target.value)} />
           </label>
         </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Added By</legend>
+        <label className="field-narrow">
+          Added By
+          <input list="meta-team-members" value={value.addedBy || ''} onChange={(e) => onChange('addedBy', e.target.value)} placeholder="Your name" />
+          <datalist id="meta-team-members">
+            {meta?.teamMembers.map((v) => <option key={v} value={v} />)}
+          </datalist>
+        </label>
       </fieldset>
     </>
   );

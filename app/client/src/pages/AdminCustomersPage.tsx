@@ -112,13 +112,14 @@ export function AdminCustomersPage() {
               {sortableHeader('Company', 'CompanyName')}
               {sortableHeader('Contact', 'ContactPersonName')}
               {sortableHeader('Location', 'City')}
+              <th>Added By</th>
               {sortableHeader('Leads', 'LeadCount')}
               <th></th>
             </tr>
           </thead>
           <tbody>
-            {loading && <tr><td colSpan={5} className="empty-state">Loading...</td></tr>}
-            {!loading && items.length === 0 && <tr><td colSpan={5} className="empty-state">No customers found.</td></tr>}
+            {loading && <tr><td colSpan={6} className="empty-state">Loading...</td></tr>}
+            {!loading && items.length === 0 && <tr><td colSpan={6} className="empty-state">No customers found.</td></tr>}
             {!loading && items.map((c) => (
               <tr key={c.id} className="clickable-row" onClick={() => navigate(`/customers/${c.id}`)}>
                 <td>
@@ -130,6 +131,7 @@ export function AdminCustomersPage() {
                   <div className="cell-secondary">{c.phone || c.email || ''}</div>
                 </td>
                 <td>{formatLocation(c) || '-'}</td>
+                <td>{c.addedBy || '-'}</td>
                 <td>{c.leadCount ?? 0}</td>
                 <td className="row-actions" onClick={(e) => e.stopPropagation()}>
                   <Link to={`/customers/${c.id}/edit`} className="btn-link">Edit</Link>

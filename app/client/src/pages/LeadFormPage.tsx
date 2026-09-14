@@ -139,17 +139,6 @@ export function LeadFormPage() {
               </select>
             </label>
             <label>
-              Application Category
-              <input list="applicationCategories" value={leadForm.applicationCategory || ''} onChange={(e) => setLead('applicationCategory', e.target.value)} />
-              <datalist id="applicationCategories">
-                {meta?.applicationCategories.map((v) => <option key={v} value={v} />)}
-              </datalist>
-            </label>
-            <label>
-              Application (detail)
-              <input value={leadForm.applicationDetail || ''} onChange={(e) => setLead('applicationDetail', e.target.value)} />
-            </label>
-            <label>
               Product Interest
               <input list="productInterests" value={leadForm.productInterest || ''} onChange={(e) => setLead('productInterest', e.target.value)} />
               <datalist id="productInterests">
@@ -173,11 +162,22 @@ export function LeadFormPage() {
               Lead Value
               <input type="number" step="0.01" value={leadForm.leadValue ?? ''} onChange={(e) => setLead('leadValue', e.target.value ? Number(e.target.value) : null)} />
             </label>
+            <label>
+              Application Category
+              <input list="applicationCategories" value={leadForm.applicationCategory || ''} onChange={(e) => setLead('applicationCategory', e.target.value)} />
+              <datalist id="applicationCategories">
+                {meta?.applicationCategories.map((v) => <option key={v} value={v} />)}
+              </datalist>
+            </label>
             <label className="checkbox-label">
               <input type="checkbox" checked={!!leadForm.movedToSourcePro} onChange={(e) => setLead('movedToSourcePro', e.target.checked)} />
               Moved to SourcePro
             </label>
           </div>
+          <label>
+            Application Detail
+            <textarea rows={3} value={leadForm.applicationDetail || ''} onChange={(e) => setLead('applicationDetail', e.target.value)} />
+          </label>
         </fieldset>
 
         <fieldset>

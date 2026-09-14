@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import crypto from 'crypto';
+import path from 'path';
 
 dotenv.config();
 
@@ -33,5 +34,11 @@ export const config = {
     // Signs session cookies. Not persisted across restarts unless set via env,
     // which just means everyone's session resets (re-login) when the app restarts.
     sessionSecret: process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex'),
+  },
+  uploads: {
+    // Root folder for lead attachments, organized as <dir>/leads/<leadId>/<file>.
+    // Configurable so it can point at any drive/path on the server - keep it
+    // outside app/server/dist and app/client/dist so a rebuild never touches it.
+    dir: process.env.UPLOADS_DIR ? path.resolve(process.env.UPLOADS_DIR) : path.join(__dirname, '..', 'uploads'),
   },
 };

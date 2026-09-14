@@ -1,9 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { fetchLead, addFollowup, deleteFollowup, fetchMeta } from '../api';
-import type { Lead, Followup, MetaResponse } from '../types';
+import type { Lead, Followup, Attachment, MetaResponse } from '../types';
 import { StatusBadge, PriorityBadge, ProductBadge } from '../components/StatusBadge';
 import { FollowupTimeline } from '../components/FollowupTimeline';
+import { AttachmentsSection } from '../components/AttachmentsSection';
 import { Field } from '../components/Field';
 import { formatInr, formatLocation } from '../utils/format';
 
@@ -13,6 +14,7 @@ export function LeadDetailPage() {
 
   const [lead, setLead] = useState<Lead | null>(null);
   const [followups, setFollowups] = useState<Followup[]>([]);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [meta, setMeta] = useState<MetaResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,9 +27,10 @@ export function LeadDetailPage() {
 
   const load = useCallback(() => {
     fetchLead(leadId)
-      .then(({ lead, followups }) => {
+      .then(({ lead, followups, attachments }) => {
         setLead(lead);
         setFollowups(followups);
+        setAttachments(attachments);
         setFuNextDate(lead.nextFollowUpDate || '');
       })
       .catch((err) => setError(err.message));
@@ -109,7 +112,6 @@ export function LeadDetailPage() {
           <Field label="Enquiry Number" value={lead.enquiryNumber} />
           <Field label="Customer Code" value={lead.customer.customerCode} />
           <Field label="Application Category" value={lead.applicationCategory} />
-          <Field label="Application Detail" value={lead.applicationDetail} />
           <Field label="Product Interest" value={lead.productInterest ? <ProductBadge product={lead.productInterest} /> : null} />
           <Field label="Inquiry Source" value={lead.inquirySource} />
           <Field label="Lead Type" value={lead.leadType} />
@@ -133,6 +135,13 @@ export function LeadDetailPage() {
           <Field label="Order Date" value={lead.orderDate} />
         </section>
 
+        {lead.applicationDetail && (
+          <section className="detail-section detail-section-wide">
+            <h2>Application Detail</h2>
+            <p className="notes-text">{lead.applicationDetail}</p>
+          </section>
+        )}
+
         {lead.notes && (
           <section className="detail-section detail-section-wide">
             <h2>Notes</h2>
@@ -140,6 +149,8 @@ export function LeadDetailPage() {
           </section>
         )}
       </div>
+
+      <AttachmentsSection leadId={lead.id} attachments={attachments} onChanged={load} />
 
       <section className="followup-section">
         <h2>Follow-up History</h2>

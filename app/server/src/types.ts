@@ -37,6 +37,7 @@ export interface Customer {
   state: string | null;
   city: string | null;
   pincode: string | null;
+  addedBy: string | null;
   createdAt: string;
   updatedAt: string;
   leadCount?: number;
@@ -92,5 +93,15 @@ export interface Followup {
   followUpDate: string;
   followUpBy: string | null;
   note: string | null;
+  createdAt: string;
+}
+
+export interface LeadAttachment {
+  id: number;
+  leadId: number;
+  fileName: string;
+  contentType: string;
+  fileSizeBytes: number;
+  uploadedBy: string | null;
   createdAt: string;
 }

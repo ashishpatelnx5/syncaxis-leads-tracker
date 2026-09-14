@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import ExcelJS from 'exceljs';
 import { getPool, sql } from '../db';
-import { mapLeadRow, mapFollowupRow, CUSTOMER_JOIN_COLUMNS } from '../mappers';
+import { mapLeadRow, mapFollowupRow, mapAttachmentRow, CUSTOMER_JOIN_COLUMNS } from '../mappers';
 import {
   CARD_COLLECTED_OPTIONS,
   FOLLOW_UP_STATUS_OPTIONS,
@@ -30,7 +30,7 @@ const SORTABLE_COLUMNS: Record<string, string> = {
   FollowUpStatus: 'L.FollowUpStatus',
   LeadValue: 'L.LeadValue',
   ProductInterest: 'L.ProductInterest',
-  ApplicationDetail: 'L.ApplicationDetail',
+  ApplicationCategory: 'L.ApplicationCategory',
   LeadGeneratedBy: 'L.LeadGeneratedBy',
   EnquiryAssignedTo: 'L.EnquiryAssignedTo',
 };
@@ -43,7 +43,7 @@ function isValidEnum(value: unknown, options: readonly string[]): boolean {
 // the given request. Shared so the export endpoint always matches whatever
 // the list endpoint would return for the same query params.
 function applyLeadFilters(request: any, query: Record<string, string>): string[] {
-  const { q, status, priority, leadType, assignedTo, leadGeneratedBy, customerId, cardCollected, inquirySource, productInterest, overdue, followUpDueDays, hasValue, hasErpRef } = query;
+  const { q, status, priority, leadType, assignedTo, leadGeneratedBy, customerId, cardCollected, inquirySource, productInterest, overdue, followUpDueDays, hasValue, hasErpRef, agingBucket } = query;
   const conditions: string[] = ['L.IsDeleted = 0'];
 
   if (q) {
@@ -111,6 +111,21 @@ function applyLeadFilters(request: any, query: Record<string, string>): string[]
     conditions.push(`L.ErpLeadNumber IS NOT NULL AND LTRIM(RTRIM(L.ErpLeadNumber)) <> ''`);
   } else if (hasErpRef === 'false') {
     conditions.push(`(L.ErpLeadNumber IS NULL OR LTRIM(RTRIM(L.ErpLeadNumber)) = '')`);
+  }
+  // Aging buckets mirror the dashboard's "days since received" breakdown, and
+  // only apply to currently-open leads (matching how that chart is computed).
+  const AGE_EXPR = 'DATEDIFF(DAY, COALESCE(L.ReceivedDate, CAST(L.CreatedAt AS DATE)), CAST(SYSUTCDATETIME() AS DATE))';
+  const AGING_BUCKET_RANGES: Record<string, [number, number | null]> = {
+    '0-7 days': [0, 7],
+    '8-30 days': [8, 30],
+    '31-60 days': [31, 60],
+    '61-90 days': [61, 90],
+    '90+ days': [91, null],
+  };
+  if (agingBucket && AGING_BUCKET_RANGES[agingBucket]) {
+    const [min, max] = AGING_BUCKET_RANGES[agingBucket];
+    conditions.push(`L.FollowUpStatus NOT IN ${TERMINAL_STATUSES_SQL}`);
+    conditions.push(max === null ? `${AGE_EXPR} >= ${min}` : `${AGE_EXPR} BETWEEN ${min} AND ${max}`);
   }
 
   return conditions;
@@ -332,9 +347,15 @@ router.get('/:id', async (req: Request, res: Response) => {
       .input('id', sql.Int, id)
       .query('SELECT * FROM dbo.Followups WHERE LeadId = @id ORDER BY FollowUpDate DESC, Id DESC');
 
+    const attachmentsResult = await pool
+      .request()
+      .input('id', sql.Int, id)
+      .query('SELECT * FROM dbo.LeadAttachments WHERE LeadId = @id AND IsDeleted = 0 ORDER BY CreatedAt DESC');
+
     res.json({
       lead: mapLeadRow(leadResult.recordset[0]),
       followups: followupsResult.recordset.map(mapFollowupRow),
+      attachments: attachmentsResult.recordset.map(mapAttachmentRow),
     });
   } catch (err) {
     console.error(err);

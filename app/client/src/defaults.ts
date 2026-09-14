@@ -13,4 +13,5 @@ export const EMPTY_CUSTOMER: CustomerInput = {
   state: null,
   city: null,
   pincode: null,
+  addedBy: null,
 };

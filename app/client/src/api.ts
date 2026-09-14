@@ -1,4 +1,4 @@
-import type { Lead, Followup, LeadListResponse, CustomerListResponse, MetaResponse, Customer, CustomerInput } from './types';
+import type { Lead, Followup, Attachment, LeadListResponse, CustomerListResponse, MetaResponse, Customer, CustomerInput } from './types';
 
 export class ApiError extends Error {
   status: number;
@@ -75,11 +75,42 @@ export interface DashboardStats {
   byAssignee: { assignee: string; count: number }[];
   byGenerator: { generator: string; count: number }[];
   byProduct: { product: string; total: number; won: number; lost: number }[];
-  monthlyTrend: { month: string; received: number; ordered: number }[];
+  leadsByCustomer: { customerId: number; companyName: string; total: number; won: number; lost: number }[];
+  leadAging: { bucket: string; count: number }[];
 }
 
 export function fetchDashboardStats(): Promise<DashboardStats> {
   return request('/stats/dashboard');
+}
+
+export type TrendPeriod = 'weekly' | 'monthly' | 'quarterly';
+
+export interface TrendPoint {
+  periodKey: string;
+  periodLabel: string;
+  received: number;
+  ordered: number;
+}
+
+export function fetchTrend(period: TrendPeriod): Promise<TrendPoint[]> {
+  return request(`/stats/trend?period=${period}`);
+}
+
+export type TeamTrendMetric = 'enquiries' | 'followups' | 'orders';
+
+export interface TeamTrendPeriod {
+  periodKey: string;
+  periodLabel: string;
+  counts: Record<string, number>;
+}
+
+export interface TeamTrend {
+  people: string[];
+  periods: TeamTrendPeriod[];
+}
+
+export function fetchTeamTrend(metric: TeamTrendMetric, period: TrendPeriod): Promise<TeamTrend> {
+  return request(`/stats/team-trend?metric=${metric}&period=${period}`);
 }
 
 export interface LeadFilters {
@@ -97,6 +128,7 @@ export interface LeadFilters {
   followUpDueDays?: number;
   hasValue?: boolean;
   hasErpRef?: boolean;
+  agingBucket?: string;
   page?: number;
   pageSize?: number;
   sortBy?: string;
@@ -173,7 +205,7 @@ export async function exportLeads(filters: LeadFilters): Promise<void> {
   URL.revokeObjectURL(url);
 }
 
-export function fetchLead(id: number): Promise<{ lead: Lead; followups: Followup[] }> {
+export function fetchLead(id: number): Promise<{ lead: Lead; followups: Followup[]; attachments: Attachment[] }> {
   return request(`/leads/${id}`);
 }
 
@@ -198,6 +230,39 @@ export function addFollowup(
 
 export function deleteFollowup(id: number): Promise<void> {
   return request(`/followups/${id}`, { method: 'DELETE' });
+}
+
+// Uploads use FormData (not JSON), so this bypasses the `request` helper's
+// Content-Type: application/json header - the browser sets the multipart
+// boundary itself.
+export async function uploadAttachments(leadId: number, files: File[]): Promise<Attachment[]> {
+  const form = new FormData();
+  files.forEach((file) => form.append('files', file));
+
+  const res = await fetch(`/api/leads/${leadId}/attachments`, {
+    method: 'POST',
+    credentials: 'include',
+    body: form,
+  });
+  if (!res.ok) {
+    let message = `Upload failed (${res.status})`;
+    try {
+      const body = await res.json();
+      if (body?.error) message = body.error;
+    } catch {
+      // ignore parse errors
+    }
+    throw new ApiError(message, res.status);
+  }
+  return res.json();
+}
+
+export function deleteAttachment(id: number): Promise<void> {
+  return request(`/attachments/${id}`, { method: 'DELETE' });
+}
+
+export function attachmentFileUrl(id: number): string {
+  return `/api/attachments/${id}/file`;
 }
 
 export function fetchMeta(): Promise<MetaResponse> {

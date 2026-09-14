@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser';
 import path from 'path';
 import leadsRouter from './routes/leads';
 import followupsRouter from './routes/followups';
+import attachmentsRouter from './routes/attachments';
 import metaRouter from './routes/meta';
 import customersRouter from './routes/customers';
 import statsRouter from './routes/stats';
@@ -22,6 +23,7 @@ export function createApp() {
 
   app.use('/api/leads', requireAuth, leadsRouter);
   app.use('/api', requireAuth, followupsRouter);
+  app.use('/api', requireAuth, attachmentsRouter);
   app.use('/api/meta', requireAuth, metaRouter);
   app.use('/api/customers', requireAuth, customersRouter);
   app.use('/api/stats', requireAuth, statsRouter);

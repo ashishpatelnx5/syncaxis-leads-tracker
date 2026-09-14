@@ -53,6 +53,12 @@ DB_TRUST_SERVER_CERTIFICATE=true
 AUTH_USERNAME=syncaxis
 AUTH_PASSWORD=<choose a password for the team login>
 SESSION_SECRET=
+
+# Optional: where lead attachments (uploaded files) are stored on disk, organized
+# as <dir>/leads/<leadId>/<file>. Point this at a data drive with room to grow -
+# it defaults to app/server/uploads if left blank, which works but is easy to
+# lose track of. Whatever you choose, it's untouched by future `npm run build`s.
+UPLOADS_DIR=
 ```
 
 `SESSION_SECRET` can be left blank — a random one is generated at startup — but if you

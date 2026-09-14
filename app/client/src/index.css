@@ -332,6 +332,16 @@ a:hover { text-decoration: underline; }
   overflow-x: auto;
 }
 
+.table-wrap-scroll {
+  max-height: 480px;
+  overflow-y: auto;
+}
+.table-wrap-scroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
 table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--color-border); vertical-align: top; }
 th { background: var(--color-subtle-bg); font-weight: 600; color: var(--color-text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; }
@@ -600,6 +610,176 @@ input:disabled {
 .detail-value { text-align: right; font-weight: 500; }
 
 .notes-text { white-space: pre-wrap; margin: 0; }
+
+.attachments-section { margin-bottom: 24px; }
+
+.attachment-upload-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.attachment-carousel {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.attachment-carousel-track {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scroll-snap-type: x proximity;
+  padding: 2px;
+  scrollbar-width: thin;
+}
+
+.attachment-card {
+  position: relative;
+  flex-shrink: 0;
+  width: 110px;
+  height: 110px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--color-subtle-bg);
+  border: 1px solid var(--color-border);
+  scroll-snap-align: start;
+}
+
+.attachment-card-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border: none;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.attachment-card img,
+.attachment-card video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.attachment-card-icon { color: var(--color-text-muted); }
+.attachment-card-icon svg { width: 32px; height: 32px; }
+
+.attachment-card-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.attachment-card-play svg { width: 16px; height: 16px; }
+
+.attachment-card-delete {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  line-height: 1;
+  font-size: 1rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.attachment-card:hover .attachment-card-delete { opacity: 1; }
+
+.attachment-carousel-arrow {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 36px;
+  border: none;
+  background: linear-gradient(90deg, var(--color-surface) 20%, transparent);
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.attachment-carousel:hover .attachment-carousel-arrow { opacity: 1; }
+.attachment-carousel-arrow svg { width: 22px; height: 22px; }
+.attachment-carousel-arrow-left { left: 0; }
+.attachment-carousel-arrow-right {
+  right: 0;
+  background: linear-gradient(270deg, var(--color-surface) 20%, transparent);
+}
+
+.attachment-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 1000;
+}
+
+.attachment-modal-content {
+  position: relative;
+  max-width: min(92vw, 1100px);
+  max-height: 90vh;
+  display: flex;
+}
+
+.attachment-modal-content img,
+.attachment-modal-content video {
+  max-width: 100%;
+  max-height: 90vh;
+  border-radius: var(--radius);
+  display: block;
+  background: #000;
+}
+
+.attachment-modal-content iframe {
+  width: min(92vw, 900px);
+  height: 85vh;
+  border: none;
+  border-radius: var(--radius);
+  background: #fff;
+}
+
+.attachment-modal-close {
+  position: absolute;
+  top: -40px;
+  right: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.attachment-modal-close:hover { background: rgba(255, 255, 255, 0.3); }
 
 .followup-section {
   background: var(--color-surface);
@@ -918,7 +1098,6 @@ input:disabled {
 
 .chart-axis { stroke: var(--color-border); stroke-width: 1; }
 .chart-gridline { stroke: var(--color-border); stroke-width: 1; }
-.chart-crosshair { stroke: var(--color-text-muted); stroke-width: 1; stroke-dasharray: 3 3; }
 
 .chart-axis-label {
   font-size: 0.72rem;
@@ -952,6 +1131,33 @@ input:disabled {
   font-weight: 500;
 }
 .chart-legend-tooltip strong { font-weight: 700; }
+
+.trend-chart-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.trend-period-toggle {
+  display: inline-flex;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.trend-period-btn {
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  border: none;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+.trend-period-btn + .trend-period-btn { border-left: 1px solid var(--color-border); }
+.trend-period-btn:hover { background: var(--color-surface-hover); }
+.trend-period-btn.active { background: var(--color-primary); color: #fff; }
 
 /* Responsive layout: below this width the sidebar becomes a slide-in drawer
    opened from a top bar, instead of a permanent 250px column. */
