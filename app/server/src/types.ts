@@ -18,6 +18,61 @@ export const LEAD_TYPE_OPTIONS = ['Project', 'Trading', 'Other'] as const;
 export const TERMINAL_STATUSES = ['Won', 'Lost', 'Not Relevant'] as const;
 export const TERMINAL_STATUSES_SQL = `(${TERMINAL_STATUSES.map((s) => `'${s}'`).join(',')})`;
 
+// The Leads pipeline/board view groups FollowUpStatus into four sequential
+// stages (plus a terminal Closed bucket for Lost/Not Relevant) - this is the
+// single source of truth for that grouping, the status a lead is set to when
+// it advances into a stage, and what must be filled in before leaving one.
+export const PIPELINE_STAGES = ['Enquiry', 'Discovery', 'Quotation', 'SalesOrder'] as const;
+export type PipelineStage = (typeof PIPELINE_STAGES)[number] | 'Closed';
+
+export const STAGE_STATUSES: Record<PipelineStage, readonly FollowUpStatus[]> = {
+  Enquiry: ['Not Contacted', 'Contacted'],
+  Discovery: ['Meeting Scheduled'],
+  Quotation: ['Quotation Sent', 'Awaiting Response'],
+  SalesOrder: ['Won'],
+  Closed: ['Lost', 'Not Relevant'],
+};
+
+export const STAGE_ENTRY_STATUS: Record<(typeof PIPELINE_STAGES)[number], FollowUpStatus> = {
+  Enquiry: 'Contacted',
+  Discovery: 'Meeting Scheduled',
+  Quotation: 'Quotation Sent',
+  SalesOrder: 'Won',
+};
+
+// Lead fields (as used in the API request/response body, camelCase) that must
+// be filled in before a lead can leave this stage for the next one.
+export const STAGE_GATING_FIELDS: Record<(typeof PIPELINE_STAGES)[number], string[]> = {
+  Enquiry: ['productInterest', 'applicationDetail'],
+  Discovery: ['leadValue'],
+  Quotation: ['erpLeadNumber', 'orderNo'],
+  SalesOrder: [],
+};
+
+const STAGE_FIELD_LABELS: Record<string, string> = {
+  productInterest: 'Product Interest',
+  applicationDetail: 'Application Detail',
+  leadValue: 'Lead Value',
+  erpLeadNumber: 'ERP Lead Number',
+  orderNo: 'Order No',
+};
+
+export function stageFieldLabel(field: string): string {
+  return STAGE_FIELD_LABELS[field] || field;
+}
+
+export function stageForStatus(status: string): PipelineStage {
+  for (const stage of Object.keys(STAGE_STATUSES) as PipelineStage[]) {
+    if ((STAGE_STATUSES[stage] as readonly string[]).includes(status)) return stage;
+  }
+  return 'Closed';
+}
+
+export interface LeadStageHistoryEntry {
+  stage: PipelineStage;
+  enteredAt: string;
+}
+
 export type CardCollected = (typeof CARD_COLLECTED_OPTIONS)[number];
 export type FollowUpStatus = (typeof FOLLOW_UP_STATUS_OPTIONS)[number];
 export type Priority = (typeof PRIORITY_OPTIONS)[number];

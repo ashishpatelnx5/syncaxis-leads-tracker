@@ -11,6 +11,14 @@ export type FollowUpStatus =
 export type Priority = 'Hot' | 'Warm' | 'Cold';
 export type LeadType = 'Project' | 'Trading' | 'Other';
 
+export const PIPELINE_STAGES = ['Enquiry', 'Discovery', 'Quotation', 'SalesOrder'] as const;
+export type PipelineStage = (typeof PIPELINE_STAGES)[number] | 'Closed';
+
+export interface LeadStageHistoryEntry {
+  stage: PipelineStage;
+  enteredAt: string;
+}
+
 export interface Customer {
   id: number;
   customerCode: string | null;
@@ -60,6 +68,11 @@ export interface Lead {
   updatedAt: string;
   followUpCount?: number;
   lastFollowUpDate?: string | null;
+}
+
+export interface PipelineLead extends Lead {
+  stage: PipelineStage;
+  stageHistory: LeadStageHistoryEntry[];
 }
 
 export interface Followup {

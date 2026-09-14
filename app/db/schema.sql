@@ -6,6 +6,7 @@ SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 GO
 
+IF OBJECT_ID('dbo.LeadStageHistory', 'U') IS NOT NULL DROP TABLE dbo.LeadStageHistory;
 IF OBJECT_ID('dbo.LeadAttachments', 'U') IS NOT NULL DROP TABLE dbo.LeadAttachments;
 IF OBJECT_ID('dbo.Followups', 'U') IS NOT NULL DROP TABLE dbo.Followups;
 IF OBJECT_ID('dbo.Leads', 'U') IS NOT NULL DROP TABLE dbo.Leads;
@@ -96,6 +97,18 @@ CREATE TABLE dbo.LeadAttachments (
 );
 GO
 
+-- One row per stage a lead has ever entered (Enquiry/Discovery/Quotation/
+-- SalesOrder/Closed), timestamped - lets the pipeline view compute how long
+-- a lead spent in each stage ("aging"), not just its current status.
+CREATE TABLE dbo.LeadStageHistory (
+    Id          INT IDENTITY(1,1) PRIMARY KEY,
+    LeadId      INT NOT NULL CONSTRAINT FK_LeadStageHistory_Leads REFERENCES dbo.Leads(Id) ON DELETE CASCADE,
+    Stage       NVARCHAR(20) NOT NULL
+        CONSTRAINT CK_LeadStageHistory_Stage CHECK (Stage IN ('Enquiry','Discovery','Quotation','SalesOrder','Closed')),
+    EnteredAt   DATETIME2 NOT NULL CONSTRAINT DF_LeadStageHistory_EnteredAt DEFAULT SYSUTCDATETIME()
+);
+GO
+
 CREATE UNIQUE INDEX UX_Customers_CustomerCode ON dbo.Customers(CustomerCode) WHERE CustomerCode IS NOT NULL;
 CREATE INDEX IX_Customers_CompanyName ON dbo.Customers(CompanyName) WHERE IsDeleted = 0;
 CREATE INDEX IX_Customers_Email ON dbo.Customers(Email) WHERE IsDeleted = 0;
@@ -110,4 +123,6 @@ CREATE INDEX IX_Leads_EnquiryAssignedTo ON dbo.Leads(EnquiryAssignedTo) WHERE Is
 CREATE INDEX IX_Followups_LeadId ON dbo.Followups(LeadId);
 
 CREATE INDEX IX_LeadAttachments_LeadId ON dbo.LeadAttachments(LeadId) WHERE IsDeleted = 0;
+
+CREATE INDEX IX_LeadStageHistory_LeadId ON dbo.LeadStageHistory(LeadId);
 GO

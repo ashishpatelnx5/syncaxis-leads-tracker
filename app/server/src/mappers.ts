@@ -1,4 +1,4 @@
-import { Lead, Followup, Customer, LeadAttachment } from './types';
+import { Lead, Followup, Customer, LeadAttachment, LeadStageHistoryEntry, PipelineStage } from './types';
 
 // Shared by any query that joins Customers alongside another table - keeps the
 // Cust_* aliasing in one place for mapCustomerRow/mapLeadRow to rely on.
@@ -102,6 +102,13 @@ export function mapFollowupRow(row: any): Followup {
     followUpBy: row.FollowUpBy,
     note: row.Note,
     createdAt: toIsoDateTime(row.CreatedAt),
+  };
+}
+
+export function mapStageHistoryRow(row: any): LeadStageHistoryEntry {
+  return {
+    stage: row.Stage as PipelineStage,
+    enteredAt: toIsoDateTime(row.EnteredAt),
   };
 }
 

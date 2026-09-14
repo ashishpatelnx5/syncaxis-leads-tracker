@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { getPool, sql } from '../db';
 import { mapFollowupRow } from '../mappers';
 import { FOLLOW_UP_STATUS_OPTIONS } from '../types';
+import { logStageChangeIfNeeded } from './leads';
 
 const router = Router();
 
@@ -22,7 +23,7 @@ router.post('/leads/:id/followups', async (req: Request, res: Response) => {
     const lead = await pool
       .request()
       .input('id', sql.Int, leadId)
-      .query('SELECT Id FROM dbo.Leads WHERE Id = @id AND IsDeleted = 0');
+      .query('SELECT Id, FollowUpStatus FROM dbo.Leads WHERE Id = @id AND IsDeleted = 0');
     if (!lead.recordset.length) return res.status(404).json({ error: 'Lead not found' });
 
     const insertResult = await pool
@@ -45,6 +46,7 @@ router.post('/leads/:id/followups', async (req: Request, res: Response) => {
       await updateRequest.query(
         'UPDATE dbo.Leads SET NextFollowUpDate = @nextFollowUpDate, FollowUpStatus = @newStatus, UpdatedAt = SYSUTCDATETIME() WHERE Id = @id'
       );
+      await logStageChangeIfNeeded(pool, leadId, lead.recordset[0].FollowUpStatus, newStatus);
     } else {
       await updateRequest.query(
         'UPDATE dbo.Leads SET NextFollowUpDate = @nextFollowUpDate, UpdatedAt = SYSUTCDATETIME() WHERE Id = @id'

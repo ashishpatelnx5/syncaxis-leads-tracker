@@ -1,13 +1,18 @@
 import { Router, Request, Response } from 'express';
 import ExcelJS from 'exceljs';
 import { getPool, sql } from '../db';
-import { mapLeadRow, mapFollowupRow, mapAttachmentRow, CUSTOMER_JOIN_COLUMNS } from '../mappers';
+import { mapLeadRow, mapFollowupRow, mapAttachmentRow, mapStageHistoryRow, CUSTOMER_JOIN_COLUMNS } from '../mappers';
 import {
   CARD_COLLECTED_OPTIONS,
   FOLLOW_UP_STATUS_OPTIONS,
   PRIORITY_OPTIONS,
   LEAD_TYPE_OPTIONS,
   TERMINAL_STATUSES_SQL,
+  PIPELINE_STAGES,
+  STAGE_ENTRY_STATUS,
+  STAGE_GATING_FIELDS,
+  stageForStatus,
+  stageFieldLabel,
 } from '../types';
 
 const router = Router();
@@ -328,6 +333,72 @@ router.get('/export', async (req: Request, res: Response) => {
   }
 });
 
+// GET /api/leads/pipeline?q= - every matching lead with its pipeline stage
+// and full stage-entry history, for the Leads page's card/lifecycle view.
+// No pagination (capped at 1000) - this view is meant to show the whole
+// pipeline at a glance, not a page of it.
+router.get('/pipeline', async (req: Request, res: Response) => {
+  try {
+    const query = req.query as Record<string, string>;
+    const pool = await getPool();
+
+    const listRequest = pool.request();
+    const conditions = applyLeadFilters(listRequest, query);
+    const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    // Deliberately skips LEAD_SELECT_BASE's FollowUpCount/LastFollowUpDate
+    // correlated subqueries - the card view doesn't use them, and computing
+    // them for every row (rather than a paginated slice) is expensive.
+    //
+    // No ORDER BY on the wide row set here on purpose: sorting rows that
+    // include the NVARCHAR(MAX) Notes column made SQL Server request a huge
+    // memory grant for the sort and stall for ~25s waiting on it (observed
+    // as a RESOURCE_SEMAPHORE wait), even for a few hundred rows. Ordering
+    // only the narrow Id list (inside the IN-subquery) is cheap; the client
+    // sorts the small final result set itself instead of the DB re-sorting
+    // the wide rows.
+    const leadsResult = await listRequest.query(`
+      SELECT L.*, ${CUSTOMER_JOIN_COLUMNS}
+      FROM dbo.Leads L
+      JOIN dbo.Customers C ON C.Id = L.CustomerId
+      WHERE L.Id IN (
+        SELECT TOP 1000 L.Id FROM dbo.Leads L JOIN dbo.Customers C ON C.Id = L.CustomerId
+        ${whereClause}
+        ORDER BY L.UpdatedAt DESC
+      )
+    `);
+    const leads = leadsResult.recordset.map(mapLeadRow).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    if (!leads.length) return res.json([]);
+
+    const historyRequest = pool.request();
+    const idParams = leads.map((lead, i) => {
+      historyRequest.input(`id${i}`, sql.Int, lead.id);
+      return `@id${i}`;
+    });
+    const historyResult = await historyRequest.query(`
+      SELECT LeadId, Stage, EnteredAt FROM dbo.LeadStageHistory WHERE LeadId IN (${idParams.join(',')}) ORDER BY EnteredAt ASC
+    `);
+
+    const historyByLead = new Map<number, ReturnType<typeof mapStageHistoryRow>[]>();
+    for (const row of historyResult.recordset) {
+      const list = historyByLead.get(row.LeadId) || [];
+      list.push(mapStageHistoryRow(row));
+      historyByLead.set(row.LeadId, list);
+    }
+
+    res.json(
+      leads.map((lead) => ({
+        ...lead,
+        stage: stageForStatus(lead.followUpStatus),
+        stageHistory: historyByLead.get(lead.id) || [],
+      }))
+    );
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch pipeline' });
+  }
+});
+
 // GET /api/leads/:id - single lead with follow-ups
 router.get('/:id', async (req: Request, res: Response) => {
   try {
@@ -360,6 +431,72 @@ router.get('/:id', async (req: Request, res: Response) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to fetch lead' });
+  }
+});
+
+// POST /api/leads/:id/advance-stage - moves a lead to the next pipeline stage
+// (Enquiry -> Discovery -> Quotation -> Sales Order), one step at a time, only
+// if the required fields for its *current* stage are filled in. Logs the
+// transition to LeadStageHistory so the card view can show per-stage aging.
+router.post('/:id/advance-stage', async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id)) return res.status(400).json({ error: 'Invalid lead id' });
+
+  try {
+    const pool = await getPool();
+    const leadResult = await pool.request().input('id', sql.Int, id).query(`${LEAD_SELECT_BASE} WHERE L.Id = @id AND L.IsDeleted = 0`);
+    if (!leadResult.recordset.length) return res.status(404).json({ error: 'Lead not found' });
+
+    const lead = mapLeadRow(leadResult.recordset[0]);
+    const currentStage = stageForStatus(lead.followUpStatus);
+    const currentIndex = (PIPELINE_STAGES as readonly string[]).indexOf(currentStage);
+    if (currentIndex === -1) {
+      return res.status(400).json({ error: 'This lead is closed and cannot be advanced.' });
+    }
+    if (currentIndex === PIPELINE_STAGES.length - 1) {
+      return res.status(400).json({ error: 'This lead is already at the last stage.' });
+    }
+
+    const requiredFields = STAGE_GATING_FIELDS[currentStage as (typeof PIPELINE_STAGES)[number]];
+    const missing = requiredFields.filter((field) => {
+      const value = (lead as any)[field];
+      return value === null || value === undefined || value === '';
+    });
+    if (missing.length) {
+      return res.status(400).json({
+        error: `Can't advance yet - fill in first: ${missing.map(stageFieldLabel).join(', ')}`,
+        missingFields: missing,
+      });
+    }
+
+    const nextStage = PIPELINE_STAGES[currentIndex + 1];
+    const nextStatus = STAGE_ENTRY_STATUS[nextStage];
+
+    await pool
+      .request()
+      .input('id', sql.Int, id)
+      .input('followUpStatus', sql.NVarChar, nextStatus)
+      .query('UPDATE dbo.Leads SET FollowUpStatus = @followUpStatus, UpdatedAt = SYSUTCDATETIME() WHERE Id = @id');
+    await pool
+      .request()
+      .input('leadId', sql.Int, id)
+      .input('stage', sql.NVarChar, nextStage)
+      .query('INSERT INTO dbo.LeadStageHistory (LeadId, Stage) VALUES (@leadId, @stage)');
+
+    const updated = await pool.request().input('id', sql.Int, id).query(`${LEAD_SELECT_BASE} WHERE L.Id = @id`);
+    const historyResult = await pool
+      .request()
+      .input('id', sql.Int, id)
+      .query('SELECT Stage, EnteredAt FROM dbo.LeadStageHistory WHERE LeadId = @id ORDER BY EnteredAt ASC');
+
+    res.json({
+      ...mapLeadRow(updated.recordset[0]),
+      stage: nextStage,
+      stageHistory: historyResult.recordset.map(mapStageHistoryRow),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to advance lead stage' });
   }
 });
 
@@ -402,6 +539,22 @@ async function generateNextEnquiryNumber(pool: any): Promise<string> {
   `);
   const nextNum = (result.recordset[0].MaxNum || 0) + 1;
   return `${prefix}${nextNum}`;
+}
+
+// Whenever a lead's status crosses into a different pipeline stage (not just
+// a status change within the same stage, e.g. Quotation Sent -> Awaiting
+// Response), log it - so the card view's aging stays accurate even for
+// status changes made through the regular edit form or a follow-up entry,
+// not just the gated /advance-stage action.
+export async function logStageChangeIfNeeded(pool: any, leadId: number, previousStatus: string, newStatus: string): Promise<void> {
+  const previousStage = stageForStatus(previousStatus);
+  const newStage = stageForStatus(newStatus);
+  if (previousStage === newStage) return;
+  await pool
+    .request()
+    .input('leadId', sql.Int, leadId)
+    .input('stage', sql.NVarChar, newStage)
+    .query('INSERT INTO dbo.LeadStageHistory (LeadId, Stage) VALUES (@leadId, @stage)');
 }
 
 function bindLeadFieldInputs(request: any, body: any) {
@@ -457,6 +610,13 @@ router.post('/', async (req: Request, res: Response) => {
     `);
     const newId = result.recordset[0].Id;
 
+    const initialStage = stageForStatus(req.body.followUpStatus || 'Not Contacted');
+    await pool
+      .request()
+      .input('leadId', sql.Int, newId)
+      .input('stage', sql.NVarChar, initialStage)
+      .query('INSERT INTO dbo.LeadStageHistory (LeadId, Stage) VALUES (@leadId, @stage)');
+
     const leadResult = await pool.request().input('id', sql.Int, newId).query(`${LEAD_SELECT_BASE} WHERE L.Id = @id`);
     res.status(201).json(mapLeadRow(leadResult.recordset[0]));
   } catch (err) {
@@ -476,7 +636,7 @@ router.put('/:id', async (req: Request, res: Response) => {
   try {
     const pool = await getPool();
 
-    const existing = await pool.request().input('id', sql.Int, id).query('SELECT Id, CustomerId FROM dbo.Leads WHERE Id = @id AND IsDeleted = 0');
+    const existing = await pool.request().input('id', sql.Int, id).query('SELECT Id, CustomerId, FollowUpStatus FROM dbo.Leads WHERE Id = @id AND IsDeleted = 0');
     if (!existing.recordset.length) return res.status(404).json({ error: 'Lead not found' });
 
     const customerId = req.body.customerId || existing.recordset[0].CustomerId;
@@ -513,6 +673,8 @@ router.put('/:id', async (req: Request, res: Response) => {
         UpdatedAt = SYSUTCDATETIME()
       WHERE Id = @id
     `);
+
+    await logStageChangeIfNeeded(pool, id, existing.recordset[0].FollowUpStatus, req.body.followUpStatus ?? 'Not Contacted');
 
     const leadResult = await pool.request().input('id', sql.Int, id).query(`${LEAD_SELECT_BASE} WHERE L.Id = @id`);
     res.json(mapLeadRow(leadResult.recordset[0]));

@@ -1,4 +1,4 @@
-import type { Lead, Followup, Attachment, LeadListResponse, CustomerListResponse, MetaResponse, Customer, CustomerInput } from './types';
+import type { Lead, Followup, Attachment, LeadListResponse, CustomerListResponse, MetaResponse, Customer, CustomerInput, PipelineLead } from './types';
 
 export class ApiError extends Error {
   status: number;
@@ -219,6 +219,20 @@ export function updateLead(id: number, data: LeadInput): Promise<Lead> {
 
 export function deleteLead(id: number): Promise<void> {
   return request(`/leads/${id}`, { method: 'DELETE' });
+}
+
+// The Leads page's card/lifecycle view: every matching lead with its
+// pipeline stage and full stage-entry history (for per-stage aging).
+export function fetchPipeline(q?: string): Promise<PipelineLead[]> {
+  const params = new URLSearchParams();
+  if (q) params.set('q', q);
+  return request(`/leads/pipeline?${params.toString()}`);
+}
+
+// Moves a lead to the next pipeline stage - rejected (400, with a message)
+// if the required fields for its current stage aren't filled in yet.
+export function advanceLeadStage(id: number): Promise<PipelineLead> {
+  return request(`/leads/${id}/advance-stage`, { method: 'POST' });
 }
 
 export function addFollowup(

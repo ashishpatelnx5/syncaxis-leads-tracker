@@ -722,7 +722,8 @@ input:disabled {
   opacity: 0;
   transition: opacity 0.15s;
 }
-.attachment-carousel:hover .attachment-carousel-arrow { opacity: 1; }
+.attachment-carousel:hover .attachment-carousel-arrow,
+.lead-carousel:hover .attachment-carousel-arrow { opacity: 1; }
 .attachment-carousel-arrow svg { width: 22px; height: 22px; }
 .attachment-carousel-arrow-left { left: 0; }
 .attachment-carousel-arrow-right {
@@ -1158,6 +1159,136 @@ input:disabled {
 .trend-period-btn + .trend-period-btn { border-left: 1px solid var(--color-border); }
 .trend-period-btn:hover { background: var(--color-surface-hover); }
 .trend-period-btn.active { background: var(--color-primary); color: #fff; }
+
+.lead-carousel {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+}
+
+.lead-carousel-track {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scroll-snap-type: x proximity;
+  padding: 4px 2px 8px;
+}
+
+.lead-carousel-arrow { top: 0; bottom: 0; }
+
+.lead-pipeline-card {
+  flex: 0 0 260px;
+  scroll-snap-align: start;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  cursor: pointer;
+}
+.lead-pipeline-card:hover { border-color: var(--color-primary); }
+
+.lead-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.lead-card-company { font-weight: 600; font-size: 0.88rem; }
+.lead-card-meta { font-size: 0.78rem; color: var(--color-text-muted); }
+.lead-card-value { font-size: 0.85rem; font-weight: 600; margin-top: 4px; }
+
+.lead-card-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-border);
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+.lead-card-followup.text-bad { font-weight: 600; }
+
+.lead-card-closed {
+  margin-top: 10px;
+  padding: 6px 10px;
+  border-radius: var(--radius);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+}
+.lead-card-closed-lost { background: var(--color-danger-bg); color: var(--color-danger); }
+.lead-card-closed-not-relevant { background: var(--color-subtle-bg); color: var(--color-text-muted); }
+
+.lead-card-stage-status {
+  margin-top: 8px;
+  font-size: 0.76rem;
+  color: var(--color-text-muted);
+}
+.lead-card-error {
+  margin-top: 6px;
+  font-size: 0.74rem;
+  color: var(--color-danger);
+}
+
+.lead-stepper {
+  display: flex;
+  margin-top: 10px;
+}
+.lead-stepper-step {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+}
+.lead-stepper-marker-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+.lead-stepper-dot {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border);
+  background: var(--color-surface);
+}
+.lead-stepper-dot-done { background: var(--color-primary); border-color: var(--color-primary); }
+.lead-stepper-dot-current { background: var(--color-surface); border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(91, 140, 255, 0.25); }
+.lead-stepper-dot-future { opacity: 0.6; }
+.lead-stepper-dot.clickable { cursor: pointer; }
+.lead-stepper-dot.clickable:hover { border-color: var(--color-primary); transform: scale(1.15); }
+
+.lead-stepper-line {
+  flex: 1;
+  height: 2px;
+  background: var(--color-border);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lead-stepper-line-done { background: var(--color-primary); }
+.lead-stepper-days {
+  font-size: 0.62rem;
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+  padding: 0 3px;
+  position: relative;
+}
+
+.lead-stepper-label {
+  margin-top: 4px;
+  font-size: 0.65rem;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+.lead-stepper-label.current { color: var(--color-primary); font-weight: 600; }
 
 /* Responsive layout: below this width the sidebar becomes a slide-in drawer
    opened from a top bar, instead of a permanent 250px column. */
