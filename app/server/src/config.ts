@@ -1,5 +1,4 @@
 import dotenv from 'dotenv';
-import crypto from 'crypto';
 import path from 'path';
 
 dotenv.config();
@@ -27,13 +26,13 @@ export const config = {
     encrypt: process.env.DB_ENCRYPT === 'true',
     trustServerCertificate: process.env.DB_TRUST_SERVER_CERTIFICATE !== 'false',
   },
-  auth: {
-    // Single shared login for the whole team (not per-user accounts).
-    username: process.env.AUTH_USERNAME || 'syncaxis',
-    password: process.env.AUTH_PASSWORD || 'changeme',
-    // Signs session cookies. Not persisted across restarts unless set via env,
-    // which just means everyone's session resets (re-login) when the app restarts.
-    sessionSecret: process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex'),
+  portal: {
+    // Base URL of the Syncaxis Company Portal - the source of truth for user
+    // accounts and access control (Portal Admin > Roles). This app has no
+    // login credentials of its own: it proxies /auth/login to the Portal
+    // server-to-server, and periodically re-checks a session against
+    // /api/auth/me for as long as it's active.
+    apiUrl: (process.env.PORTAL_API_URL || 'http://localhost:8050').replace(/\/$/, ''),
   },
   uploads: {
     // Root folder for lead attachments, organized as <dir>/leads/<leadId>/<file>.

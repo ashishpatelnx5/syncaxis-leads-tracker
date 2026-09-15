@@ -28,15 +28,27 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return res.json();
 }
 
-export function login(username: string, password: string): Promise<{ ok: true }> {
+export interface SessionUser {
+  username: string;
+  displayName: string;
+  isAdmin: boolean;
+}
+
+export function login(username: string, password: string): Promise<SessionUser> {
   return request('/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) });
+}
+
+// True SSO: exchanges a short-lived code (minted by the Portal when the user
+// clicks the Leads Tracker tile there) for a session, without a password.
+export function ssoLogin(code: string): Promise<SessionUser> {
+  return request('/auth/sso', { method: 'POST', body: JSON.stringify({ code }) });
 }
 
 export function logout(): Promise<{ ok: true }> {
   return request('/auth/logout', { method: 'POST' });
 }
 
-export function fetchSession(): Promise<{ authenticated: true }> {
+export function fetchSession(): Promise<SessionUser> {
   return request('/auth/me');
 }
 

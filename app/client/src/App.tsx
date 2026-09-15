@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import { ThemeProvider } from './theme/ThemeContext';
 import { LoginPage } from './pages/LoginPage';
+import { SsoCallbackPage } from './pages/SsoCallbackPage';
 import { Sidebar } from './components/Sidebar';
 import { Logo } from './components/Logo';
 import { DashboardPage } from './pages/DashboardPage';
@@ -17,8 +18,13 @@ import { AdminLeadsPage } from './pages/AdminLeadsPage';
 import { AdminCustomersPage } from './pages/AdminCustomersPage';
 
 function AppShell() {
-  const { authenticated, checking } = useAuth();
+  const { authenticated, checking, user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Checked before anything else, including the session-loading state below -
+  // a handoff code from the Portal makes its own sign-in decision regardless
+  // of whatever session (or lack of one) already exists here.
+  if (new URLSearchParams(window.location.search).has('ssoCode')) return <SsoCallbackPage />;
 
   if (checking) return <div className="auth-checking">Loading...</div>;
   if (!authenticated) return <LoginPage />;
@@ -46,8 +52,8 @@ function AppShell() {
               <Route path="/customers/:id" element={<CustomerDetailPage />} />
               <Route path="/customers/:id/edit" element={<CustomerFormPage />} />
               <Route path="/admin" element={<Navigate to="/admin/leads" replace />} />
-              <Route path="/admin/leads" element={<AdminLeadsPage />} />
-              <Route path="/admin/customers" element={<AdminCustomersPage />} />
+              <Route path="/admin/leads" element={user?.isAdmin ? <AdminLeadsPage /> : <Navigate to="/" replace />} />
+              <Route path="/admin/customers" element={user?.isAdmin ? <AdminCustomersPage /> : <Navigate to="/" replace />} />
             </Routes>
           </main>
         </div>

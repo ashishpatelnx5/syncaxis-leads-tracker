@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { getPool, sql } from '../db';
 import { mapCustomerRow, mapLeadRow, CUSTOMER_JOIN_COLUMNS } from '../mappers';
+import { requireLeadsTrackerAdmin } from '../auth';
 
 const router = Router();
 
@@ -206,7 +207,7 @@ router.put('/:id', async (req: Request, res: Response) => {
 
 // DELETE /api/customers/:id - soft delete (Admin only). Blocked while the
 // customer still has active leads, so a lead never points at a hidden customer.
-router.delete('/:id', async (req: Request, res: Response) => {
+router.delete('/:id', requireLeadsTrackerAdmin, async (req: Request, res: Response) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id)) return res.status(400).json({ error: 'Invalid customer id' });
 

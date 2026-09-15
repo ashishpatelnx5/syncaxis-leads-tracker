@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import ExcelJS from 'exceljs';
 import { getPool, sql } from '../db';
+import { requireLeadsTrackerAdmin } from '../auth';
 import { mapLeadRow, mapFollowupRow, mapAttachmentRow, mapStageHistoryRow, CUSTOMER_JOIN_COLUMNS } from '../mappers';
 import {
   CARD_COLLECTED_OPTIONS,
@@ -685,7 +686,7 @@ router.put('/:id', async (req: Request, res: Response) => {
 });
 
 // DELETE /api/leads/:id - soft delete
-router.delete('/:id', async (req: Request, res: Response) => {
+router.delete('/:id', requireLeadsTrackerAdmin, async (req: Request, res: Response) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id)) return res.status(400).json({ error: 'Invalid lead id' });
 
