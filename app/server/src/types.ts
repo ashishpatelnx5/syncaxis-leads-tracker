@@ -93,6 +93,7 @@ export interface Customer {
   city: string | null;
   pincode: string | null;
   addedBy: string | null;
+  updatedBy: string | null;
   createdAt: string;
   updatedAt: string;
   leadCount?: number;
@@ -130,6 +131,7 @@ export interface Lead {
   leadValue: number | null;
   leadGeneratedBy: string | null;
   enquiryAssignedTo: string | null;
+  updatedBy: string | null;
   nextFollowUpDate: string | null;
   erpLeadNumber: string | null;
   orderNo: string | null;

@@ -45,6 +45,14 @@ export function destroySession(sessionId: string | undefined): void {
   if (sessionId) sessions.delete(sessionId);
 }
 
+// The name written into attribution fields (LeadGeneratedBy, AddedBy,
+// UpdatedBy, FollowUpBy, UploadedBy) when a user creates/edits a record.
+// Falls back to username on the rare chance the identity provider ever sends
+// a blank displayName, so attribution never silently writes an empty string.
+export function actorName(session: SessionRecord): string {
+  return session.displayName || session.username;
+}
+
 export function accessFromPortalUser(user: any): { hasAccess: boolean; hasAdminAccess: boolean } {
   const applications: string[] = user?.permissions?.applications || [];
   const pages: string[] = user?.permissions?.pages || [];

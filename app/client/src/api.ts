@@ -162,7 +162,6 @@ export interface LeadInput {
   leadType?: string;
   movedToSourcePro?: boolean;
   leadValue?: number | null;
-  leadGeneratedBy?: string | null;
   enquiryAssignedTo?: string | null;
   nextFollowUpDate?: string | null;
   erpLeadNumber?: string | null;
@@ -249,7 +248,7 @@ export function advanceLeadStage(id: number): Promise<PipelineLead> {
 
 export function addFollowup(
   leadId: number,
-  data: { followUpDate: string; followUpBy?: string; note?: string; newStatus?: string; nextFollowUpDate?: string }
+  data: { followUpDate: string; note?: string; newStatus?: string; nextFollowUpDate?: string }
 ): Promise<Followup> {
   return request(`/leads/${leadId}/followups`, { method: 'POST', body: JSON.stringify(data) });
 }

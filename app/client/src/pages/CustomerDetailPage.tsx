@@ -53,6 +53,7 @@ export function CustomerDetailPage() {
           <Field label="Address" value={customer.address} />
           <Field label="Location" value={formatLocation(customer)} />
           <Field label="Added By" value={customer.addedBy} />
+          <Field label="Last Updated By" value={customer.updatedBy} />
         </section>
       </div>
 

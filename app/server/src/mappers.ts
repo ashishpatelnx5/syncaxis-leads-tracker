@@ -7,7 +7,7 @@ export const CUSTOMER_JOIN_COLUMNS = `
     C.Department AS Cust_Department, C.ContactPersonName AS Cust_ContactPersonName,
     C.Email AS Cust_Email, C.Phone AS Cust_Phone, C.GSTIN AS Cust_GSTIN, C.Address AS Cust_Address,
     C.Country AS Cust_Country, C.State AS Cust_State, C.City AS Cust_City, C.Pincode AS Cust_Pincode,
-    C.AddedBy AS Cust_AddedBy, C.CreatedAt AS Cust_CreatedAt, C.UpdatedAt AS Cust_UpdatedAt
+    C.AddedBy AS Cust_AddedBy, C.UpdatedBy AS Cust_UpdatedBy, C.CreatedAt AS Cust_CreatedAt, C.UpdatedAt AS Cust_UpdatedAt
 `;
 
 function toIsoDate(v: unknown): string | null {
@@ -38,6 +38,7 @@ export function mapCustomerRow(row: any): Customer {
     city: row.City,
     pincode: row.Pincode,
     addedBy: row.AddedBy,
+    updatedBy: row.UpdatedBy,
     createdAt: toIsoDateTime(row.CreatedAt),
     updatedAt: toIsoDateTime(row.UpdatedAt),
     leadCount: row.LeadCount !== undefined ? Number(row.LeadCount) : undefined,
@@ -65,6 +66,7 @@ export function mapLeadRow(row: any): Lead {
       city: row.Cust_City,
       pincode: row.Cust_Pincode,
       addedBy: row.Cust_AddedBy,
+      updatedBy: row.Cust_UpdatedBy,
       createdAt: toIsoDateTime(row.Cust_CreatedAt),
       updatedAt: toIsoDateTime(row.Cust_UpdatedAt),
     },
@@ -81,6 +83,7 @@ export function mapLeadRow(row: any): Lead {
     leadValue: row.LeadValue !== null && row.LeadValue !== undefined ? Number(row.LeadValue) : null,
     leadGeneratedBy: row.LeadGeneratedBy,
     enquiryAssignedTo: row.EnquiryAssignedTo,
+    updatedBy: row.UpdatedBy,
     nextFollowUpDate: toIsoDate(row.NextFollowUpDate),
     erpLeadNumber: row.ErpLeadNumber,
     orderNo: row.OrderNo,

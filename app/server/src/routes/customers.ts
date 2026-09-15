@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { getPool, sql } from '../db';
 import { mapCustomerRow, mapLeadRow, CUSTOMER_JOIN_COLUMNS } from '../mappers';
-import { requireLeadsTrackerAdmin } from '../auth';
+import { requireLeadsTrackerAdmin, actorName } from '../auth';
 
 const router = Router();
 
@@ -109,6 +109,9 @@ async function generateNextCustomerCode(pool: any): Promise<string> {
   return `CUST-${String(nextNum).padStart(6, '0')}`;
 }
 
+// AddedBy/UpdatedBy are attribution fields, not free-text input - they're
+// bound separately in the POST/PUT handlers below (from the logged-in
+// session), never from the request body.
 function bindCustomerInputs(request: any, body: any) {
   request.input('companyName', sql.NVarChar, body.companyName);
   request.input('department', sql.NVarChar, body.department || null);
@@ -121,7 +124,6 @@ function bindCustomerInputs(request: any, body: any) {
   request.input('state', sql.NVarChar, body.state || null);
   request.input('city', sql.NVarChar, body.city || null);
   request.input('pincode', sql.NVarChar, body.pincode || null);
-  request.input('addedBy', sql.NVarChar, body.addedBy || null);
 }
 
 const GSTIN_PATTERN = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
@@ -150,6 +152,7 @@ router.post('/', async (req: Request, res: Response) => {
 
     const request = pool.request();
     request.input('customerCode', sql.NVarChar, customerCode);
+    request.input('addedBy', sql.NVarChar, actorName(req.session!));
     bindCustomerInputs(request, req.body);
     const result = await request.query(`
       INSERT INTO dbo.Customers (CustomerCode, CompanyName, Department, ContactPersonName, Email, Phone, GSTIN, Address, Country, State, City, Pincode, AddedBy)
@@ -167,8 +170,8 @@ router.post('/', async (req: Request, res: Response) => {
 
 // PUT /api/customers/:id - update (CustomerCode is intentionally not
 // updatable here - it's not in bindCustomerInputs or the SET clause below.
-// AddedBy *is* editable for now, so existing customers from before this field
-// existed can be backfilled by hand.)
+// AddedBy is likewise not updatable - it's set once at creation from the
+// logged-in user and stays fixed; UpdatedBy tracks who made this edit.)
 router.put('/:id', async (req: Request, res: Response) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id)) return res.status(400).json({ error: 'Invalid customer id' });
@@ -188,12 +191,13 @@ router.put('/:id', async (req: Request, res: Response) => {
 
     const request = pool.request();
     request.input('id', sql.Int, id);
+    request.input('updatedBy', sql.NVarChar, actorName(req.session!));
     bindCustomerInputs(request, req.body);
     await request.query(`
       UPDATE dbo.Customers SET
         CompanyName = @companyName, Department = @department,
         ContactPersonName = @contactPersonName, Email = @email, Phone = @phone, GSTIN = @gstin, Address = @address,
-        Country = @country, State = @state, City = @city, Pincode = @pincode, AddedBy = @addedBy, UpdatedAt = SYSUTCDATETIME()
+        Country = @country, State = @state, City = @city, Pincode = @pincode, UpdatedBy = @updatedBy, UpdatedAt = SYSUTCDATETIME()
       WHERE Id = @id
     `);
 

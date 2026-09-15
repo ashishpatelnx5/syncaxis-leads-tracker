@@ -4,6 +4,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { getPool, sql } from '../db';
 import { mapAttachmentRow } from '../mappers';
 import { uploadLeadAttachments, contentTypeFor, isInlineViewable, leadFolder, reserveDeletedFileName, MAX_FILE_SIZE_BYTES } from '../uploads';
+import { actorName } from '../auth';
 
 const router = Router();
 
@@ -73,10 +74,11 @@ router.post(
           .input('fileName', sql.NVarChar, file.filename)
           .input('contentType', sql.NVarChar, contentTypeFor(file.originalname))
           .input('fileSizeBytes', sql.BigInt, file.size)
+          .input('uploadedBy', sql.NVarChar, actorName(req.session!))
           .query(`
-            INSERT INTO dbo.LeadAttachments (LeadId, FileName, ContentType, FileSizeBytes)
+            INSERT INTO dbo.LeadAttachments (LeadId, FileName, ContentType, FileSizeBytes, UploadedBy)
             OUTPUT INSERTED.*
-            VALUES (@leadId, @fileName, @contentType, @fileSizeBytes)
+            VALUES (@leadId, @fileName, @contentType, @fileSizeBytes, @uploadedBy)
           `);
         inserted.push(mapAttachmentRow(result.recordset[0]));
       }

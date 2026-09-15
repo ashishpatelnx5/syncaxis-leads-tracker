@@ -34,12 +34,13 @@ export interface Customer {
   city: string | null;
   pincode: string | null;
   addedBy: string | null;
+  updatedBy: string | null;
   createdAt: string;
   updatedAt: string;
   leadCount?: number;
 }
 
-export type CustomerInput = Omit<Customer, 'id' | 'createdAt' | 'updatedAt' | 'leadCount'>;
+export type CustomerInput = Omit<Customer, 'id' | 'addedBy' | 'updatedBy' | 'createdAt' | 'updatedAt' | 'leadCount'>;
 
 export interface Lead {
   id: number;
@@ -58,6 +59,7 @@ export interface Lead {
   leadValue: number | null;
   leadGeneratedBy: string | null;
   enquiryAssignedTo: string | null;
+  updatedBy: string | null;
   nextFollowUpDate: string | null;
   erpLeadNumber: string | null;
   orderNo: string | null;
@@ -117,7 +119,6 @@ export interface MetaResponse {
   inquirySources: string[];
   assignees: string[];
   generators: string[];
-  teamMembers: string[];
   productInterests: string[];
   countries: string[];
   states: string[];

@@ -30,6 +30,7 @@ CREATE TABLE dbo.Customers (
     City              NVARCHAR(100) NULL,
     Pincode           NVARCHAR(10)  NULL,
     AddedBy           NVARCHAR(200) NULL,
+    UpdatedBy         NVARCHAR(200) NULL,
     IsDeleted         BIT           NOT NULL CONSTRAINT DF_Customers_IsDeleted DEFAULT 0,
     CreatedAt         DATETIME2     NOT NULL CONSTRAINT DF_Customers_CreatedAt DEFAULT SYSUTCDATETIME(),
     UpdatedAt         DATETIME2     NOT NULL CONSTRAINT DF_Customers_UpdatedAt DEFAULT SYSUTCDATETIME()
@@ -57,6 +58,7 @@ CREATE TABLE dbo.Leads (
     LeadValue           DECIMAL(18,2)   NULL,
     LeadGeneratedBy     NVARCHAR(200)   NULL,
     EnquiryAssignedTo   NVARCHAR(200)   NULL,
+    UpdatedBy           NVARCHAR(200)   NULL,
     NextFollowUpDate    DATE            NULL,
     ErpLeadNumber       NVARCHAR(100)   NULL,
     OrderNo             NVARCHAR(100)   NULL,

@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import ExcelJS from 'exceljs';
 import { getPool, sql } from '../db';
-import { requireLeadsTrackerAdmin } from '../auth';
+import { requireLeadsTrackerAdmin, actorName } from '../auth';
 import { mapLeadRow, mapFollowupRow, mapAttachmentRow, mapStageHistoryRow, CUSTOMER_JOIN_COLUMNS } from '../mappers';
 import {
   CARD_COLLECTED_OPTIONS,
@@ -477,7 +477,8 @@ router.post('/:id/advance-stage', async (req: Request, res: Response) => {
       .request()
       .input('id', sql.Int, id)
       .input('followUpStatus', sql.NVarChar, nextStatus)
-      .query('UPDATE dbo.Leads SET FollowUpStatus = @followUpStatus, UpdatedAt = SYSUTCDATETIME() WHERE Id = @id');
+      .input('updatedBy', sql.NVarChar, actorName(req.session!))
+      .query('UPDATE dbo.Leads SET FollowUpStatus = @followUpStatus, UpdatedBy = @updatedBy, UpdatedAt = SYSUTCDATETIME() WHERE Id = @id');
     await pool
       .request()
       .input('leadId', sql.Int, id)
@@ -558,6 +559,9 @@ export async function logStageChangeIfNeeded(pool: any, leadId: number, previous
     .query('INSERT INTO dbo.LeadStageHistory (LeadId, Stage) VALUES (@leadId, @stage)');
 }
 
+// LeadGeneratedBy and UpdatedBy are attribution fields, not free-text input -
+// they're bound separately in the POST/PUT handlers below (from the logged-in
+// session), never from the request body.
 function bindLeadFieldInputs(request: any, body: any) {
   request.input('applicationCategory', sql.NVarChar, body.applicationCategory ?? null);
   request.input('applicationDetail', sql.NVarChar, body.applicationDetail ?? null);
@@ -569,7 +573,6 @@ function bindLeadFieldInputs(request: any, body: any) {
   request.input('leadType', sql.NVarChar, body.leadType ?? 'Other');
   request.input('movedToSourcePro', sql.Bit, !!body.movedToSourcePro);
   request.input('leadValue', sql.Decimal(18, 2), body.leadValue ?? null);
-  request.input('leadGeneratedBy', sql.NVarChar, body.leadGeneratedBy ?? null);
   request.input('enquiryAssignedTo', sql.NVarChar, body.enquiryAssignedTo ?? null);
   request.input('nextFollowUpDate', sql.Date, body.nextFollowUpDate || null);
   request.input('erpLeadNumber', sql.NVarChar, body.erpLeadNumber ?? null);
@@ -595,6 +598,7 @@ router.post('/', async (req: Request, res: Response) => {
     const leadRequest = pool.request();
     leadRequest.input('customerId', sql.Int, req.body.customerId);
     leadRequest.input('enquiryNumber', sql.NVarChar, enquiryNumber);
+    leadRequest.input('leadGeneratedBy', sql.NVarChar, actorName(req.session!));
     bindLeadFieldInputs(leadRequest, req.body);
     const result = await leadRequest.query(`
       INSERT INTO dbo.Leads (
@@ -649,6 +653,7 @@ router.put('/:id', async (req: Request, res: Response) => {
     const leadRequest = pool.request();
     leadRequest.input('id', sql.Int, id);
     leadRequest.input('customerId', sql.Int, customerId);
+    leadRequest.input('updatedBy', sql.NVarChar, actorName(req.session!));
     bindLeadFieldInputs(leadRequest, req.body);
     await leadRequest.query(`
       UPDATE dbo.Leads SET
@@ -663,7 +668,6 @@ router.put('/:id', async (req: Request, res: Response) => {
         LeadType = @leadType,
         MovedToSourcePro = @movedToSourcePro,
         LeadValue = @leadValue,
-        LeadGeneratedBy = @leadGeneratedBy,
         EnquiryAssignedTo = @enquiryAssignedTo,
         NextFollowUpDate = @nextFollowUpDate,
         ErpLeadNumber = @erpLeadNumber,
@@ -671,6 +675,7 @@ router.put('/:id', async (req: Request, res: Response) => {
         OrderDate = @orderDate,
         ReceivedDate = @receivedDate,
         Notes = @notes,
+        UpdatedBy = @updatedBy,
         UpdatedAt = SYSUTCDATETIME()
       WHERE Id = @id
     `);

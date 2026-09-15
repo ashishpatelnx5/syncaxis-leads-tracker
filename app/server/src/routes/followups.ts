@@ -3,6 +3,7 @@ import { getPool, sql } from '../db';
 import { mapFollowupRow } from '../mappers';
 import { FOLLOW_UP_STATUS_OPTIONS } from '../types';
 import { logStageChangeIfNeeded } from './leads';
+import { actorName } from '../auth';
 
 const router = Router();
 
@@ -11,7 +12,7 @@ router.post('/leads/:id/followups', async (req: Request, res: Response) => {
   const leadId = Number(req.params.id);
   if (!Number.isInteger(leadId)) return res.status(400).json({ error: 'Invalid lead id' });
 
-  const { followUpDate, followUpBy, note, newStatus, nextFollowUpDate } = req.body;
+  const { followUpDate, note, newStatus, nextFollowUpDate } = req.body;
   if (!followUpDate) return res.status(400).json({ error: 'followUpDate is required' });
   if (newStatus && !FOLLOW_UP_STATUS_OPTIONS.includes(newStatus)) {
     return res.status(400).json({ error: 'Invalid newStatus' });
@@ -30,7 +31,7 @@ router.post('/leads/:id/followups', async (req: Request, res: Response) => {
       .request()
       .input('leadId', sql.Int, leadId)
       .input('followUpDate', sql.Date, followUpDate)
-      .input('followUpBy', sql.NVarChar, followUpBy ?? null)
+      .input('followUpBy', sql.NVarChar, actorName(req.session!))
       .input('note', sql.NVarChar(sql.MAX), note ?? null)
       .query(`
         INSERT INTO dbo.Followups (LeadId, FollowUpDate, FollowUpBy, Note)
