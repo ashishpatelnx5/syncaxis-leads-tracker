@@ -29,9 +29,10 @@ export function LoginPage() {
       <form className="login-card" onSubmit={handleSubmit}>
         <Logo />
         <h1>Leads Tracker</h1>
-        <p className="login-hint">Sign in with your Syncaxis Company Portal account to continue.</p>
 
-        {error && <div className="alert alert-error">{error}</div>}
+        <div className="login-error" style={{ visibility: error ? 'visible' : 'hidden' }}>
+          {error || ' '}
+        </div>
 
         <label>
           Username

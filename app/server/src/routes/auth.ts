@@ -17,7 +17,7 @@ function establishSession(data: any, res: ExpressResponse): void {
   const { hasAccess, hasAdminAccess } = accessFromPortalUser(data.user);
   if (!hasAccess) {
     res.status(403).json({
-      error: "You're signed in to the Syncaxis Portal, but your account doesn't have access to Leads Tracker. Contact an administrator to be granted access (Portal > Admin > Roles).",
+      error: 'Sorry! You don\'t have access to this Portal. Please contact Administrator.',
     });
     return;
   }
