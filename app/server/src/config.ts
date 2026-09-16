@@ -26,13 +26,13 @@ export const config = {
     encrypt: process.env.DB_ENCRYPT === 'true',
     trustServerCertificate: process.env.DB_TRUST_SERVER_CERTIFICATE !== 'false',
   },
-  portal: {
-    // Base URL of the Syncaxis Company Portal - the source of truth for user
-    // accounts and access control (Portal Admin > Roles). This app has no
-    // login credentials of its own: it proxies /auth/login to the Portal
-    // server-to-server, and periodically re-checks a session against
-    // /api/auth/me for as long as it's active.
-    apiUrl: (process.env.PORTAL_API_URL || 'http://localhost:8050').replace(/\/$/, ''),
+  iam: {
+    // Base URL of syncaxis-iam - the source of truth for user accounts and
+    // the leads.* permission matrix. This app has no login credentials of
+    // its own: it proxies /auth/login to syncaxis-iam server-to-server, and
+    // periodically re-checks a session against /auth/me for as long as it's
+    // active.
+    apiUrl: (process.env.IAM_API_URL || 'http://localhost:8054').replace(/\/$/, ''),
   },
   uploads: {
     // Root folder for lead attachments, organized as <dir>/leads/<leadId>/<file>.

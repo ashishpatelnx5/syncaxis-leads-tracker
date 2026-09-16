@@ -4,7 +4,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { getPool, sql } from '../db';
 import { mapAttachmentRow } from '../mappers';
 import { uploadLeadAttachments, contentTypeFor, isInlineViewable, leadFolder, reserveDeletedFileName, MAX_FILE_SIZE_BYTES } from '../uploads';
-import { actorName } from '../auth';
+import { actorName, requirePermission, LEADS_PERM } from '../auth';
 
 const router = Router();
 
@@ -27,7 +27,7 @@ async function ensureLeadExists(req: Request, res: Response, next: NextFunction)
 }
 
 // GET /api/leads/:id/attachments
-router.get('/leads/:id/attachments', ensureLeadExists, async (req: Request, res: Response) => {
+router.get('/leads/:id/attachments', requirePermission(LEADS_PERM.LEADS_VIEW), ensureLeadExists, async (req: Request, res: Response) => {
   try {
     const leadId = Number(req.params.id);
     const pool = await getPool();
@@ -45,6 +45,7 @@ router.get('/leads/:id/attachments', ensureLeadExists, async (req: Request, res:
 // POST /api/leads/:id/attachments - multipart upload, field name "files" (up to 10)
 router.post(
   '/leads/:id/attachments',
+  requirePermission(LEADS_PERM.LEADS_UPDATE),
   ensureLeadExists,
   (req: Request, res: Response, next: NextFunction) => {
     uploadLeadAttachments.array('files', 10)(req, res, (err: any) => {
@@ -91,7 +92,7 @@ router.post(
 );
 
 // GET /api/attachments/:id/file - streams the file (inline for images/PDF/video, download otherwise)
-router.get('/attachments/:id/file', async (req: Request, res: Response) => {
+router.get('/attachments/:id/file', requirePermission(LEADS_PERM.LEADS_VIEW), async (req: Request, res: Response) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id)) return res.status(400).json({ error: 'Invalid attachment id' });
 
@@ -144,7 +145,7 @@ router.get('/attachments/:id/file', async (req: Request, res: Response) => {
 
 // DELETE /api/attachments/:id - soft-delete (file stays on disk, matching the
 // soft-delete convention used for leads/customers elsewhere in this app)
-router.delete('/attachments/:id', async (req: Request, res: Response) => {
+router.delete('/attachments/:id', requirePermission(LEADS_PERM.LEADS_UPDATE), async (req: Request, res: Response) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id)) return res.status(400).json({ error: 'Invalid attachment id' });
 

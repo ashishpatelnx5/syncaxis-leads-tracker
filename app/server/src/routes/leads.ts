@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import ExcelJS from 'exceljs';
 import { getPool, sql } from '../db';
-import { requireLeadsTrackerAdmin, actorName } from '../auth';
+import { requirePermission, actorName, LEADS_PERM } from '../auth';
 import { mapLeadRow, mapFollowupRow, mapAttachmentRow, mapStageHistoryRow, CUSTOMER_JOIN_COLUMNS } from '../mappers';
 import {
   CARD_COLLECTED_OPTIONS,
@@ -138,7 +138,7 @@ function applyLeadFilters(request: any, query: Record<string, string>): string[]
 }
 
 // GET /api/leads - list with search/filter/sort/pagination
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', requirePermission(LEADS_PERM.LEADS_VIEW), async (req: Request, res: Response) => {
   try {
     const query = req.query as Record<string, string>;
     const { page = '1', pageSize = '25', sortBy = 'UpdatedAt', sortDir = 'desc' } = query;
@@ -186,7 +186,7 @@ router.get('/', async (req: Request, res: Response) => {
 // GET /api/leads/export - all leads matching the current filters (no pagination)
 // as an .xlsx download: frozen header row, frozen Inquiry/Company columns, and
 // Excel's AutoFilter on the header so the sheet is immediately filterable.
-router.get('/export', async (req: Request, res: Response) => {
+router.get('/export', requirePermission(LEADS_PERM.LEADS_EXPORT), async (req: Request, res: Response) => {
   try {
     const query = req.query as Record<string, string>;
     const { sortBy = 'UpdatedAt', sortDir = 'desc' } = query;
@@ -338,7 +338,7 @@ router.get('/export', async (req: Request, res: Response) => {
 // and full stage-entry history, for the Leads page's card/lifecycle view.
 // No pagination (capped at 1000) - this view is meant to show the whole
 // pipeline at a glance, not a page of it.
-router.get('/pipeline', async (req: Request, res: Response) => {
+router.get('/pipeline', requirePermission(LEADS_PERM.LEADS_VIEW), async (req: Request, res: Response) => {
   try {
     const query = req.query as Record<string, string>;
     const pool = await getPool();
@@ -401,7 +401,7 @@ router.get('/pipeline', async (req: Request, res: Response) => {
 });
 
 // GET /api/leads/:id - single lead with follow-ups
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/:id', requirePermission(LEADS_PERM.LEADS_VIEW), async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isInteger(id)) return res.status(400).json({ error: 'Invalid lead id' });
@@ -439,7 +439,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 // (Inquiry -> Discovery -> Quotation -> Sales Order), one step at a time, only
 // if the required fields for its *current* stage are filled in. Logs the
 // transition to LeadStageHistory so the card view can show per-stage aging.
-router.post('/:id/advance-stage', async (req: Request, res: Response) => {
+router.post('/:id/advance-stage', requirePermission(LEADS_PERM.LEADS_UPDATE), async (req: Request, res: Response) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id)) return res.status(400).json({ error: 'Invalid lead id' });
 
@@ -583,7 +583,7 @@ function bindLeadFieldInputs(request: any, body: any) {
 }
 
 // POST /api/leads - create against an existing customer
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', requirePermission(LEADS_PERM.LEADS_CREATE), async (req: Request, res: Response) => {
   const validationError = validateLeadBody(req.body, false);
   if (validationError) return res.status(400).json({ error: validationError });
 
@@ -631,7 +631,7 @@ router.post('/', async (req: Request, res: Response) => {
 });
 
 // PUT /api/leads/:id - update (customerId, if provided, must be an existing customer)
-router.put('/:id', async (req: Request, res: Response) => {
+router.put('/:id', requirePermission(LEADS_PERM.LEADS_UPDATE), async (req: Request, res: Response) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id)) return res.status(400).json({ error: 'Invalid lead id' });
 
@@ -691,7 +691,7 @@ router.put('/:id', async (req: Request, res: Response) => {
 });
 
 // DELETE /api/leads/:id - soft delete
-router.delete('/:id', requireLeadsTrackerAdmin, async (req: Request, res: Response) => {
+router.delete('/:id', requirePermission(LEADS_PERM.LEADS_DELETE), async (req: Request, res: Response) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id)) return res.status(400).json({ error: 'Invalid lead id' });
 

@@ -1,8 +1,13 @@
 import { Router, Request, Response } from 'express';
 import { getPool, sql } from '../db';
 import { FOLLOW_UP_STATUS_OPTIONS, PRIORITY_OPTIONS, TERMINAL_STATUSES_SQL } from '../types';
+import { requirePermission, LEADS_PERM } from '../auth';
 
 const router = Router();
+
+// Every route here is a pure read-only aggregate query - all gated on the
+// same key, so it's applied once for the whole router rather than per-route.
+router.use(requirePermission(LEADS_PERM.LEADS_VIEW));
 
 // GET /api/stats - KPI tiles for the leads dashboard header
 router.get('/', async (_req: Request, res: Response) => {

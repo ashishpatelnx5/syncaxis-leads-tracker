@@ -3,12 +3,12 @@ import { getPool, sql } from '../db';
 import { mapFollowupRow } from '../mappers';
 import { FOLLOW_UP_STATUS_OPTIONS } from '../types';
 import { logStageChangeIfNeeded } from './leads';
-import { actorName } from '../auth';
+import { actorName, requirePermission, LEADS_PERM } from '../auth';
 
 const router = Router();
 
 // POST /api/leads/:id/followups - add a follow-up entry, optionally advancing status/next date
-router.post('/leads/:id/followups', async (req: Request, res: Response) => {
+router.post('/leads/:id/followups', requirePermission(LEADS_PERM.LEADS_UPDATE), async (req: Request, res: Response) => {
   const leadId = Number(req.params.id);
   if (!Number.isInteger(leadId)) return res.status(400).json({ error: 'Invalid lead id' });
 
@@ -62,7 +62,7 @@ router.post('/leads/:id/followups', async (req: Request, res: Response) => {
 });
 
 // DELETE /api/followups/:id
-router.delete('/followups/:id', async (req: Request, res: Response) => {
+router.delete('/followups/:id', requirePermission(LEADS_PERM.LEADS_UPDATE), async (req: Request, res: Response) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id)) return res.status(400).json({ error: 'Invalid follow-up id' });
 

@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { getPool, sql } from '../db';
 import { mapCustomerRow, mapLeadRow, CUSTOMER_JOIN_COLUMNS } from '../mappers';
-import { requireLeadsTrackerAdmin, actorName } from '../auth';
+import { requirePermission, actorName, LEADS_PERM } from '../auth';
 
 const router = Router();
 
@@ -22,7 +22,7 @@ const CUSTOMER_SORTABLE_COLUMNS: Record<string, string> = {
 };
 
 // GET /api/customers?q=&limit= - search for the lead-form picker and the customer list page
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', requirePermission(LEADS_PERM.CUSTOMERS_VIEW), async (req: Request, res: Response) => {
   try {
     const { q, page = '1', pageSize = '25', sortBy = 'CompanyName', sortDir = 'asc' } = req.query as Record<string, string>;
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
@@ -66,7 +66,7 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 // GET /api/customers/:id - customer detail plus their leads
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/:id', requirePermission(LEADS_PERM.CUSTOMERS_VIEW), async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isInteger(id)) return res.status(400).json({ error: 'Invalid customer id' });
@@ -136,7 +136,7 @@ function validateGstin(body: any): string | null {
 }
 
 // POST /api/customers - create a standalone customer record
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', requirePermission(LEADS_PERM.CUSTOMERS_CREATE), async (req: Request, res: Response) => {
   if (!req.body.companyName || !String(req.body.companyName).trim()) {
     return res.status(400).json({ error: 'companyName is required' });
   }
@@ -172,7 +172,7 @@ router.post('/', async (req: Request, res: Response) => {
 // updatable here - it's not in bindCustomerInputs or the SET clause below.
 // AddedBy is likewise not updatable - it's set once at creation from the
 // logged-in user and stays fixed; UpdatedBy tracks who made this edit.)
-router.put('/:id', async (req: Request, res: Response) => {
+router.put('/:id', requirePermission(LEADS_PERM.CUSTOMERS_UPDATE), async (req: Request, res: Response) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id)) return res.status(400).json({ error: 'Invalid customer id' });
   if (!req.body.companyName || !String(req.body.companyName).trim()) {
@@ -209,9 +209,10 @@ router.put('/:id', async (req: Request, res: Response) => {
   }
 });
 
-// DELETE /api/customers/:id - soft delete (Admin only). Blocked while the
-// customer still has active leads, so a lead never points at a hidden customer.
-router.delete('/:id', requireLeadsTrackerAdmin, async (req: Request, res: Response) => {
+// DELETE /api/customers/:id - soft delete (leads.customers.delete only).
+// Blocked while the customer still has active leads, so a lead never points
+// at a hidden customer.
+router.delete('/:id', requirePermission(LEADS_PERM.CUSTOMERS_DELETE), async (req: Request, res: Response) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id)) return res.status(400).json({ error: 'Invalid customer id' });
 

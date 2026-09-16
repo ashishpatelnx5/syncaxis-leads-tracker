@@ -3,20 +3,20 @@ import { Request, Response, NextFunction } from 'express';
 import { config } from './config';
 
 export const SESSION_COOKIE = 'syncaxis_session';
-// Hard cap on a session's lifetime - matches the Portal's own JWT expiry
-// (JWT_EXPIRES_IN, default 8h there). Independent of the re-verify interval
-// below: this is the outer bound even if the Portal is unreachable the whole
-// time and every re-verify attempt is treated as a grace-period pass.
+// Hard cap on a session's lifetime - matches syncaxis-iam's own JWT expiry.
+// Independent of the re-verify interval below: this is the outer bound even
+// if syncaxis-iam is unreachable the whole time and every re-verify attempt
+// is treated as a grace-period pass.
 export const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
 const REVERIFY_INTERVAL_MS = 5 * 60 * 1000;
 
 export interface SessionRecord {
-  portalToken: string;
+  iamToken: string;
   userId: number;
   username: string;
   displayName: string;
-  hasAccess: boolean;
-  hasAdminAccess: boolean;
+  perms: string[];
+  isFullAccess: boolean;
   lastVerifiedAt: number;
   expiresAt: number;
 }
@@ -30,9 +30,9 @@ declare global {
   }
 }
 
-// In-memory only - same as the session this replaces, nothing persists
-// across a restart, so everyone just signs back in (a few seconds, since the
-// Portal itself is the one doing the real authentication work).
+// In-memory only - nothing persists across a restart, so everyone just signs
+// back in (a few seconds, since syncaxis-iam itself is the one doing the
+// real authentication work).
 const sessions = new Map<string, SessionRecord>();
 
 export function createSession(data: Omit<SessionRecord, 'lastVerifiedAt' | 'expiresAt'>): string {
@@ -53,41 +53,76 @@ export function actorName(session: SessionRecord): string {
   return session.displayName || session.username;
 }
 
-export function accessFromPortalUser(user: any): { hasAccess: boolean; hasAdminAccess: boolean } {
-  const applications: string[] = user?.permissions?.applications || [];
-  const pages: string[] = user?.permissions?.pages || [];
-  return {
-    hasAccess: !!user?.isAdmin || applications.includes('leads-tracker'),
-    hasAdminAccess: !!user?.isAdmin || pages.includes('admin-leads-tracker'),
+export function accessFromIamUser(user: any): { perms: string[]; isFullAccess: boolean } {
+  return { perms: user?.perms || [], isFullAccess: !!user?.isFullAccess };
+}
+
+// Every leads.* permission key this app checks against, in one place - a
+// typo in a route's requirePermission(...) call becomes a compile error
+// (unknown property) instead of a silent runtime permission gap.
+export const LEADS_PERM = {
+  LEADS_VIEW: 'leads.leads.view',
+  LEADS_CREATE: 'leads.leads.create',
+  LEADS_UPDATE: 'leads.leads.update',
+  LEADS_DELETE: 'leads.leads.delete',
+  LEADS_EXPORT: 'leads.leads.export',
+  CUSTOMERS_VIEW: 'leads.customers.view',
+  CUSTOMERS_CREATE: 'leads.customers.create',
+  CUSTOMERS_UPDATE: 'leads.customers.update',
+  CUSTOMERS_DELETE: 'leads.customers.delete',
+  ADMIN_MANAGE: 'leads.admin.manage',
+} as const;
+
+// Takes just the two fields it needs (not a full SessionRecord), same as
+// hasAnyLeadsAccess below - so it can be called right after a login/SSO
+// exchange too, before a session object exists.
+export function hasPermission(access: { perms: string[]; isFullAccess: boolean }, key: string): boolean {
+  return access.isFullAccess || access.perms.includes(key);
+}
+
+// "Can this user open Leads Tracker at all" - replaces the old Portal
+// application-flag check - is now "do they hold any leads.* permission".
+// Takes just the two fields it needs (not a full SessionRecord) so it can be
+// called before a session exists yet, e.g. right after a login/SSO exchange.
+export function hasAnyLeadsAccess(access: { perms: string[]; isFullAccess: boolean }): boolean {
+  return access.isFullAccess || access.perms.some((p) => p.startsWith('leads.'));
+}
+
+export function requirePermission(key: string) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.session || !hasPermission(req.session, key)) {
+      return res.status(403).json({ error: 'You do not have access to this.' });
+    }
+    next();
   };
 }
 
-// Re-checks a session against the Portal, no more often than
-// REVERIFY_INTERVAL_MS - so an admin revoking access in the Portal takes
-// effect within a few minutes, not just at the user's next login, without
-// hitting the Portal on every single request. If the Portal is unreachable
-// (network blip, restart), the cached session is trusted until its hard
-// expiry rather than logging everyone out over it; an explicit "session
-// invalid" or "access revoked" response from the Portal ends it immediately.
-async function reverifyWithPortal(session: SessionRecord): Promise<'ok' | 'revoked'> {
+// Re-checks a session against syncaxis-iam, no more often than
+// REVERIFY_INTERVAL_MS - so a permission grant/revoke or deactivation in
+// syncaxis-iam takes effect within a few minutes, not just at the user's
+// next login, without hitting syncaxis-iam on every single request. If
+// syncaxis-iam is unreachable (network blip, restart), the cached session is
+// trusted until its hard expiry rather than logging everyone out over it; an
+// explicit "session invalid" or "access revoked" response ends it immediately.
+async function reverifyWithIam(session: SessionRecord): Promise<'ok' | 'revoked'> {
   try {
-    const res = await fetch(`${config.portal.apiUrl}/api/auth/me`, {
-      headers: { Authorization: `Bearer ${session.portalToken}` },
+    const res = await fetch(`${config.iam.apiUrl}/auth/me`, {
+      headers: { Authorization: `Bearer ${session.iamToken}` },
     });
     if (res.status === 401) return 'revoked';
-    if (!res.ok) return 'ok'; // Portal hiccup (5xx) - keep the cached session
+    if (!res.ok) return 'ok'; // syncaxis-iam hiccup (5xx) - keep the cached session
 
     const body: any = await res.json();
-    const { hasAccess, hasAdminAccess } = accessFromPortalUser(body.user);
-    if (!hasAccess) return 'revoked';
+    const { perms, isFullAccess } = accessFromIamUser(body.user);
+    if (!hasAnyLeadsAccess({ perms, isFullAccess })) return 'revoked';
 
-    session.hasAccess = hasAccess;
-    session.hasAdminAccess = hasAdminAccess;
+    session.perms = perms;
+    session.isFullAccess = isFullAccess;
     session.displayName = body.user?.displayName || session.displayName;
     session.lastVerifiedAt = Date.now();
     return 'ok';
   } catch (err) {
-    console.error('Portal re-verification failed - keeping cached session until it expires:', err);
+    console.error('syncaxis-iam re-verification failed - keeping cached session until it expires:', err);
     return 'ok';
   }
 }
@@ -101,7 +136,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   }
 
   if (Date.now() - session.lastVerifiedAt > REVERIFY_INTERVAL_MS) {
-    const outcome = await reverifyWithPortal(session);
+    const outcome = await reverifyWithIam(session);
     if (outcome === 'revoked') {
       destroySession(sessionId);
       return res.status(401).json({ error: 'Your session is no longer valid - please sign in again.' });
@@ -109,13 +144,5 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   }
 
   req.session = session;
-  next();
-}
-
-// For routes only Leads Tracker "admins" (Portal role granting the
-// admin-leads-tracker page permission, or full Portal admin) may use -
-// currently the delete endpoints under Admin > Leads/Customers.
-export function requireLeadsTrackerAdmin(req: Request, res: Response, next: NextFunction) {
-  if (!req.session?.hasAdminAccess) return res.status(403).json({ error: 'Admin access required.' });
   next();
 }
