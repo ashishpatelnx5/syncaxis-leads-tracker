@@ -1,6 +1,14 @@
 import type { Followup } from '../types';
 
-export function FollowupTimeline({ followups, onDelete }: { followups: Followup[]; onDelete: (id: number) => void }) {
+export function FollowupTimeline({
+  followups,
+  onDelete,
+  canDelete,
+}: {
+  followups: Followup[];
+  onDelete: (id: number) => void;
+  canDelete: boolean;
+}) {
   if (!followups.length) {
     return <p className="empty-state">No follow-ups logged yet.</p>;
   }
@@ -12,9 +20,11 @@ export function FollowupTimeline({ followups, onDelete }: { followups: Followup[
           <div className="timeline-header">
             <span className="timeline-date">{f.followUpDate}</span>
             {f.followUpBy && <span className="timeline-by">{f.followUpBy}</span>}
-            <button className="btn-link btn-danger-link" onClick={() => onDelete(f.id)}>
-              Delete
-            </button>
+            {canDelete && (
+              <button className="btn-link btn-danger-link" onClick={() => onDelete(f.id)}>
+                Delete
+              </button>
+            )}
           </div>
           {f.note && <p className="timeline-note">{f.note}</p>}
         </li>

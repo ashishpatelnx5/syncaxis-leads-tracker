@@ -32,7 +32,13 @@ function establishSession(data: any, res: ExpressResponse): void {
   });
 
   res.cookie(SESSION_COOKIE, sessionId, COOKIE_OPTIONS);
-  res.json({ username: data.user.username, displayName: data.user.displayName, isAdmin: hasPermission({ perms, isFullAccess }, LEADS_PERM.ADMIN_MANAGE) });
+  res.json({
+    username: data.user.username,
+    displayName: data.user.displayName,
+    isAdmin: hasPermission({ perms, isFullAccess }, LEADS_PERM.ADMIN_MANAGE),
+    perms,
+    isFullAccess,
+  });
 }
 
 // POST /api/auth/login - proxies to syncaxis-iam server-to-server (never
@@ -105,6 +111,8 @@ router.get('/me', requireAuth, (req: Request, res: ExpressResponse) => {
     username: req.session!.username,
     displayName: req.session!.displayName,
     isAdmin: hasPermission(req.session!, LEADS_PERM.ADMIN_MANAGE),
+    perms: req.session!.perms,
+    isFullAccess: req.session!.isFullAccess,
   });
 });
 

@@ -7,6 +7,8 @@ import { PageSizeSelect } from '../components/PageSizeSelect';
 import { HeaderFilterDropdown } from '../components/HeaderFilterDropdown';
 import { LeadsBoard } from '../components/LeadsBoard';
 import { formatInr, formatDate, sortProductInterests } from '../utils/format';
+import { useAuth } from '../auth/AuthContext';
+import { LEADS_PERM } from '../permissions';
 
 // Extra filters that arrive only via a dashboard drill-through link (no dropdown
 // control for them) - shown as a "Filtered by" banner with a way to clear them.
@@ -29,6 +31,7 @@ function describeSpecialFilter(params: URLSearchParams): string | null {
 
 export function LeadsListPage() {
   const navigate = useNavigate();
+  const { can } = useAuth();
   const [searchParams] = useSearchParams();
   const [view, setView] = useState<'table' | 'board'>('table');
   const [items, setItems] = useState<Lead[]>([]);
@@ -147,10 +150,12 @@ export function LeadsListPage() {
       <div className="page-header">
         <h1>Leads</h1>
         <div className="page-header-actions">
-          <button className="btn" onClick={handleExport} disabled={exporting}>
-            {exporting ? 'Exporting...' : '⬇ Export to Excel'}
-          </button>
-          <Link to="/leads/new" className="btn btn-primary">+ Add Lead</Link>
+          {can(LEADS_PERM.LEADS_EXPORT) && (
+            <button className="btn" onClick={handleExport} disabled={exporting}>
+              {exporting ? 'Exporting...' : '⬇ Export to Excel'}
+            </button>
+          )}
+          {can(LEADS_PERM.LEADS_CREATE) && <Link to="/leads/new" className="btn btn-primary">+ Add Lead</Link>}
         </div>
       </div>
 

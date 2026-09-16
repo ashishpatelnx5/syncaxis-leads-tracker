@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import { ThemeProvider } from './theme/ThemeContext';
+import { LEADS_PERM } from './permissions';
 import { LoginPage } from './pages/LoginPage';
 import { SsoCallbackPage } from './pages/SsoCallbackPage';
 import { Sidebar } from './components/Sidebar';
@@ -18,7 +19,7 @@ import { AdminLeadsPage } from './pages/AdminLeadsPage';
 import { AdminCustomersPage } from './pages/AdminCustomersPage';
 
 function AppShell() {
-  const { authenticated, checking, user } = useAuth();
+  const { authenticated, checking, user, can } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Checked before anything else, including the session-loading state below -
@@ -44,13 +45,13 @@ function AppShell() {
               <Route path="/" element={<DashboardPage />} />
               <Route path="/team-performance" element={<TeamPerformancePage />} />
               <Route path="/leads" element={<LeadsListPage />} />
-              <Route path="/leads/new" element={<LeadFormPage />} />
+              <Route path="/leads/new" element={can(LEADS_PERM.LEADS_CREATE) ? <LeadFormPage /> : <Navigate to="/leads" replace />} />
               <Route path="/leads/:id" element={<LeadDetailPage />} />
-              <Route path="/leads/:id/edit" element={<LeadFormPage />} />
+              <Route path="/leads/:id/edit" element={can(LEADS_PERM.LEADS_UPDATE) ? <LeadFormPage /> : <Navigate to="/leads" replace />} />
               <Route path="/customers" element={<CustomersListPage />} />
-              <Route path="/customers/new" element={<CustomerFormPage />} />
+              <Route path="/customers/new" element={can(LEADS_PERM.CUSTOMERS_CREATE) ? <CustomerFormPage /> : <Navigate to="/customers" replace />} />
               <Route path="/customers/:id" element={<CustomerDetailPage />} />
-              <Route path="/customers/:id/edit" element={<CustomerFormPage />} />
+              <Route path="/customers/:id/edit" element={can(LEADS_PERM.CUSTOMERS_UPDATE) ? <CustomerFormPage /> : <Navigate to="/customers" replace />} />
               <Route path="/admin" element={<Navigate to="/admin/leads" replace />} />
               <Route path="/admin/leads" element={user?.isAdmin ? <AdminLeadsPage /> : <Navigate to="/" replace />} />
               <Route path="/admin/customers" element={user?.isAdmin ? <AdminCustomersPage /> : <Navigate to="/" replace />} />

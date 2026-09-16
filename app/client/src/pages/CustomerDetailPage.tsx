@@ -5,9 +5,12 @@ import type { Customer, Lead } from '../types';
 import { StatusBadge, PriorityBadge } from '../components/StatusBadge';
 import { Field } from '../components/Field';
 import { formatLocation } from '../utils/format';
+import { useAuth } from '../auth/AuthContext';
+import { LEADS_PERM } from '../permissions';
 
 export function CustomerDetailPage() {
   const { id } = useParams();
+  const { can } = useAuth();
   const customerId = Number(id);
 
   const [customer, setCustomer] = useState<Customer | null>(null);
@@ -34,8 +37,8 @@ export function CustomerDetailPage() {
           <h1>{customer.companyName}</h1>
         </div>
         <div className="page-header-actions">
-          <Link to={`/leads/new?customerId=${customer.id}`} className="btn btn-primary">+ Add Lead</Link>
-          <Link to={`/customers/${customer.id}/edit`} className="btn">Edit</Link>
+          {can(LEADS_PERM.LEADS_CREATE) && <Link to={`/leads/new?customerId=${customer.id}`} className="btn btn-primary">+ Add Lead</Link>}
+          {can(LEADS_PERM.CUSTOMERS_UPDATE) && <Link to={`/customers/${customer.id}/edit`} className="btn">Edit</Link>}
         </div>
       </div>
 

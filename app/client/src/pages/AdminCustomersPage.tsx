@@ -6,9 +6,12 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { AdminTabs } from '../components/AdminTabs';
 import { PageSizeSelect } from '../components/PageSizeSelect';
 import { formatLocation } from '../utils/format';
+import { useAuth } from '../auth/AuthContext';
+import { LEADS_PERM } from '../permissions';
 
 export function AdminCustomersPage() {
   const navigate = useNavigate();
+  const { can } = useAuth();
   const [items, setItems] = useState<Customer[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -134,8 +137,10 @@ export function AdminCustomersPage() {
                 <td>{c.addedBy || '-'}</td>
                 <td>{c.leadCount ?? 0}</td>
                 <td className="row-actions" onClick={(e) => e.stopPropagation()}>
-                  <Link to={`/customers/${c.id}/edit`} className="btn-link">Edit</Link>
-                  <button className="btn-link btn-danger-link" onClick={() => setPendingDelete(c)}>Delete</button>
+                  {can(LEADS_PERM.CUSTOMERS_UPDATE) && <Link to={`/customers/${c.id}/edit`} className="btn-link">Edit</Link>}
+                  {can(LEADS_PERM.CUSTOMERS_DELETE) && (
+                    <button className="btn-link btn-danger-link" onClick={() => setPendingDelete(c)}>Delete</button>
+                  )}
                 </td>
               </tr>
             ))}

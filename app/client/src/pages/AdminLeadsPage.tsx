@@ -8,9 +8,12 @@ import { AdminTabs } from '../components/AdminTabs';
 import { PageSizeSelect } from '../components/PageSizeSelect';
 import { HeaderFilterDropdown } from '../components/HeaderFilterDropdown';
 import { formatInr, formatDate, sortProductInterests } from '../utils/format';
+import { useAuth } from '../auth/AuthContext';
+import { LEADS_PERM } from '../permissions';
 
 export function AdminLeadsPage() {
   const navigate = useNavigate();
+  const { can } = useAuth();
   const [items, setItems] = useState<Lead[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -176,8 +179,10 @@ export function AdminLeadsPage() {
                 <td>{lead.leadGeneratedBy || '-'}</td>
                 <td>{formatDate(lead.createdAt)}</td>
                 <td className="row-actions" onClick={(e) => e.stopPropagation()}>
-                  <Link to={`/leads/${lead.id}/edit`} className="btn-link">Edit</Link>
-                  <button className="btn-link btn-danger-link" onClick={() => setPendingDelete(lead)}>Delete</button>
+                  {can(LEADS_PERM.LEADS_UPDATE) && <Link to={`/leads/${lead.id}/edit`} className="btn-link">Edit</Link>}
+                  {can(LEADS_PERM.LEADS_DELETE) && (
+                    <button className="btn-link btn-danger-link" onClick={() => setPendingDelete(lead)}>Delete</button>
+                  )}
                 </td>
               </tr>
             ))}

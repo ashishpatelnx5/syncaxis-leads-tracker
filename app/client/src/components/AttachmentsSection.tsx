@@ -56,9 +56,10 @@ interface AttachmentsSectionProps {
   leadId: number;
   attachments: Attachment[];
   onChanged: () => void;
+  canManage: boolean;
 }
 
-export function AttachmentsSection({ leadId, attachments, onChanged }: AttachmentsSectionProps) {
+export function AttachmentsSection({ leadId, attachments, onChanged, canManage }: AttachmentsSectionProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -105,17 +106,19 @@ export function AttachmentsSection({ leadId, attachments, onChanged }: Attachmen
 
       {error && <div className="alert alert-error">{error}</div>}
 
-      <div className="attachment-upload-row">
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple
-          accept={ACCEPT}
-          onChange={(e) => handleFilesSelected(e.target.files)}
-          disabled={uploading}
-        />
-        {uploading && <span className="hint-text">Uploading...</span>}
-      </div>
+      {canManage && (
+        <div className="attachment-upload-row">
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept={ACCEPT}
+            onChange={(e) => handleFilesSelected(e.target.files)}
+            disabled={uploading}
+          />
+          {uploading && <span className="hint-text">Uploading...</span>}
+        </div>
+      )}
 
       {!attachments.length && <p className="empty-state">No files attached yet.</p>}
 
@@ -152,9 +155,11 @@ export function AttachmentsSection({ leadId, attachments, onChanged }: Attachmen
                       {thumb}
                     </a>
                   )}
-                  <button type="button" className="attachment-card-delete" onClick={() => setPendingDelete(a)} aria-label="Delete file" title="Delete">
-                    &times;
-                  </button>
+                  {canManage && (
+                    <button type="button" className="attachment-card-delete" onClick={() => setPendingDelete(a)} aria-label="Delete file" title="Delete">
+                      &times;
+                    </button>
+                  )}
                 </div>
               );
             })}

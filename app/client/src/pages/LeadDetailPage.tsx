@@ -7,10 +7,14 @@ import { FollowupTimeline } from '../components/FollowupTimeline';
 import { AttachmentsSection } from '../components/AttachmentsSection';
 import { Field } from '../components/Field';
 import { formatInr, formatLocation } from '../utils/format';
+import { useAuth } from '../auth/AuthContext';
+import { LEADS_PERM } from '../permissions';
 
 export function LeadDetailPage() {
   const { id } = useParams();
   const leadId = Number(id);
+  const { can } = useAuth();
+  const canUpdate = can(LEADS_PERM.LEADS_UPDATE);
 
   const [lead, setLead] = useState<Lead | null>(null);
   const [followups, setFollowups] = useState<Followup[]>([]);
@@ -86,7 +90,7 @@ export function LeadDetailPage() {
           </div>
         </div>
         <div className="page-header-actions">
-          <Link to={`/leads/${lead.id}/edit`} className="btn">Edit</Link>
+          {canUpdate && <Link to={`/leads/${lead.id}/edit`} className="btn">Edit</Link>}
         </div>
       </div>
 
@@ -149,43 +153,45 @@ export function LeadDetailPage() {
         )}
       </div>
 
-      <AttachmentsSection leadId={lead.id} attachments={attachments} onChanged={load} />
+      <AttachmentsSection leadId={lead.id} attachments={attachments} onChanged={load} canManage={canUpdate} />
 
       <section className="followup-section">
         <h2>Follow-up History</h2>
-        <FollowupTimeline followups={followups} onDelete={handleDeleteFollowup} />
+        <FollowupTimeline followups={followups} onDelete={handleDeleteFollowup} canDelete={canUpdate} />
 
-        <form className="followup-form" onSubmit={handleAddFollowup}>
-          <h3>Log a Follow-up</h3>
-          <div className="form-grid">
+        {canUpdate && (
+          <form className="followup-form" onSubmit={handleAddFollowup}>
+            <h3>Log a Follow-up</h3>
+            <div className="form-grid">
+              <label>
+                Date *
+                <input type="date" required value={fuDate} onChange={(e) => setFuDate(e.target.value)} />
+              </label>
+              <label>
+                Update status to
+                <select value={fuNewStatus} onChange={(e) => setFuNewStatus(e.target.value)}>
+                  <option value="">(keep current: {lead.followUpStatus})</option>
+                  {meta?.followUpStatus.filter((s) => s !== lead.followUpStatus).map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Next follow-up date
+                <input type="date" value={fuNextDate} onChange={(e) => setFuNextDate(e.target.value)} />
+              </label>
+            </div>
             <label>
-              Date *
-              <input type="date" required value={fuDate} onChange={(e) => setFuDate(e.target.value)} />
+              Notes
+              <textarea rows={3} value={fuNote} onChange={(e) => setFuNote(e.target.value)} placeholder="What happened on this follow-up?" />
             </label>
-            <label>
-              Update status to
-              <select value={fuNewStatus} onChange={(e) => setFuNewStatus(e.target.value)}>
-                <option value="">(keep current: {lead.followUpStatus})</option>
-                {meta?.followUpStatus.filter((s) => s !== lead.followUpStatus).map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Next follow-up date
-              <input type="date" value={fuNextDate} onChange={(e) => setFuNextDate(e.target.value)} />
-            </label>
-          </div>
-          <label>
-            Notes
-            <textarea rows={3} value={fuNote} onChange={(e) => setFuNote(e.target.value)} placeholder="What happened on this follow-up?" />
-          </label>
-          <div className="form-actions">
-            <button type="submit" className="btn btn-primary" disabled={submittingFollowup}>
-              {submittingFollowup ? 'Saving...' : 'Add Follow-up'}
-            </button>
-          </div>
-        </form>
+            <div className="form-actions">
+              <button type="submit" className="btn btn-primary" disabled={submittingFollowup}>
+                {submittingFollowup ? 'Saving...' : 'Add Follow-up'}
+              </button>
+            </div>
+          </form>
+        )}
       </section>
     </div>
   );

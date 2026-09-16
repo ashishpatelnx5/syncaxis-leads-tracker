@@ -4,9 +4,12 @@ import { fetchCustomers } from '../api';
 import type { Customer } from '../types';
 import { formatLocation } from '../utils/format';
 import { PageSizeSelect } from '../components/PageSizeSelect';
+import { useAuth } from '../auth/AuthContext';
+import { LEADS_PERM } from '../permissions';
 
 export function CustomersListPage() {
   const navigate = useNavigate();
+  const { can } = useAuth();
   const [items, setItems] = useState<Customer[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -68,7 +71,7 @@ export function CustomersListPage() {
     <div className="page">
       <div className="page-header">
         <h1>Customers</h1>
-        <Link to="/customers/new" className="btn btn-primary">+ Add Customer</Link>
+        {can(LEADS_PERM.CUSTOMERS_CREATE) && <Link to="/customers/new" className="btn btn-primary">+ Add Customer</Link>}
       </div>
 
       <form className="filter-bar" onSubmit={handleSearchSubmit}>

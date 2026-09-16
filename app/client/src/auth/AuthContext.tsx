@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { fetchSession, login as apiLogin, logout as apiLogout, ssoLogin as apiSsoLogin } from '../api';
 import type { SessionUser } from '../api';
+import { hasPermission } from '../permissions';
 
 interface AuthContextValue {
   authenticated: boolean;
@@ -10,6 +11,7 @@ interface AuthContextValue {
   login: (username: string, password: string) => Promise<void>;
   loginWithCode: (code: string) => Promise<void>;
   logout: () => Promise<void>;
+  can: (key: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -40,8 +42,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }
 
+  function can(key: string): boolean {
+    return hasPermission(user, key);
+  }
+
   return (
-    <AuthContext.Provider value={{ authenticated: !!user, checking, user, login, loginWithCode, logout }}>
+    <AuthContext.Provider value={{ authenticated: !!user, checking, user, login, loginWithCode, logout, can }}>
       {children}
     </AuthContext.Provider>
   );

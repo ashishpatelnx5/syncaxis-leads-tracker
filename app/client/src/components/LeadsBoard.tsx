@@ -6,6 +6,8 @@ import { PIPELINE_STAGES } from '../types';
 import { PriorityBadge } from './StatusBadge';
 import { formatInr } from '../utils/format';
 import { ChevronLeftIcon, ChevronRightIcon } from './icons';
+import { useAuth } from '../auth/AuthContext';
+import { LEADS_PERM } from '../permissions';
 
 const STAGE_LABELS: Record<(typeof PIPELINE_STAGES)[number], string> = {
   Inquiry: 'Inquiry',
@@ -43,6 +45,8 @@ function currentStageEnteredAt(lead: PipelineLead): string | null {
 
 function LeadPipelineCard({ lead, onAdvance }: { lead: PipelineLead; onAdvance: (id: number) => Promise<string | null> }) {
   const navigate = useNavigate();
+  const { can } = useAuth();
+  const canAdvance = can(LEADS_PERM.LEADS_UPDATE);
   const [advancing, setAdvancing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -79,7 +83,7 @@ function LeadPipelineCard({ lead, onAdvance }: { lead: PipelineLead; onAdvance: 
         <div className="lead-stepper">
           {PIPELINE_STAGES.map((stage, i) => {
             const state = i < stageIndex ? 'done' : i === stageIndex ? 'current' : 'future';
-            const isNextClickable = i === stageIndex + 1;
+            const isNextClickable = i === stageIndex + 1 && canAdvance;
             return (
               <div className="lead-stepper-step" key={stage}>
                 <div className="lead-stepper-marker-row">

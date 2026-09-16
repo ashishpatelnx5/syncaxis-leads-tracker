@@ -32,6 +32,8 @@ export interface SessionUser {
   username: string;
   displayName: string;
   isAdmin: boolean;
+  perms: string[];
+  isFullAccess: boolean;
 }
 
 export function login(username: string, password: string): Promise<SessionUser> {
