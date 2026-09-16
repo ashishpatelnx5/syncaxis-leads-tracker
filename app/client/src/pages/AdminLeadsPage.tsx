@@ -108,7 +108,7 @@ export function AdminLeadsPage() {
         <input
           type="text"
           className="search-input"
-          placeholder="Search company, contact, email, phone, enquiry #..."
+          placeholder="Search company, contact, email, phone, inquiry #..."
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
@@ -122,7 +122,7 @@ export function AdminLeadsPage() {
         <table>
           <thead>
             <tr>
-              {sortableHeader('Enquiry No', 'EnquiryNumber')}
+              {sortableHeader('Inquiry No', 'InquiryNumber')}
               {sortableHeader('Company Name', 'CompanyName')}
               {sortableHeader('Status', 'FollowUpStatus', (
                 <HeaderFilterDropdown
@@ -164,7 +164,7 @@ export function AdminLeadsPage() {
             )}
             {!loading && items.map((lead) => (
               <tr key={lead.id} className="clickable-row" onClick={() => navigate(`/leads/${lead.id}`)}>
-                <td>{lead.enquiryNumber || '-'}</td>
+                <td>{lead.inquiryNumber || '-'}</td>
                 <td>
                   <div className="cell-primary">{lead.customer.companyName}</div>
                   {lead.customer.city && <div className="cell-secondary">{lead.customer.city}{lead.customer.state ? `, ${lead.customer.state}` : ''}</div>}
@@ -197,7 +197,7 @@ export function AdminLeadsPage() {
       {pendingDelete && (
         <ConfirmDialog
           title="Delete lead"
-          message={`Delete the lead for "${pendingDelete.customer.companyName}" (Enquiry ${pendingDelete.enquiryNumber || '-'})? This cannot be undone from the UI.`}
+          message={`Delete the lead for "${pendingDelete.customer.companyName}" (Inquiry ${pendingDelete.inquiryNumber || '-'})? This cannot be undone from the UI.`}
           confirmLabel="Delete"
           onConfirm={confirmDelete}
           onCancel={() => setPendingDelete(null)}

@@ -2,7 +2,7 @@
 
 An internal tool for the sales/marketing team to create, update, delete, and follow up on
 leads, backed by SQL Server. Data is normalized into three tables: a **Customer Master**
-(one row per company/contact), a **Leads Master** (one row per enquiry, linked to a
+(one row per company/contact), a **Leads Master** (one row per inquiry, linked to a
 customer), and **Followups** (the dated follow-up history for a lead).
 
 ## Project layout
@@ -28,7 +28,7 @@ app/
 
 ## Features
 
-- Leads list with search (company/contact/email/phone/enquiry #) and filters
+- Leads list with search (company/contact/email/phone/inquiry #) and filters
   (status, priority, lead type, assignee), sortable, paginated.
 - Add / edit / delete leads (delete is a soft-delete — rows are hidden, not destroyed).
   Adding a lead uses a search-or-create customer picker: search existing customers by

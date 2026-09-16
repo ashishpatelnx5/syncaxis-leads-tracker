@@ -151,7 +151,7 @@ export interface LeadFilters {
 // Customer records are created/edited only via the Customer Master pages.
 export interface LeadInput {
   customerId: number;
-  enquiryNumber?: string | null;
+  inquiryNumber?: string | null;
   applicationCategory?: string | null;
   applicationDetail?: string | null;
   productInterest?: string | null;
@@ -162,7 +162,7 @@ export interface LeadInput {
   leadType?: string;
   movedToSourcePro?: boolean;
   leadValue?: number | null;
-  enquiryAssignedTo?: string | null;
+  inquiryAssignedTo?: string | null;
   nextFollowUpDate?: string | null;
   erpLeadNumber?: string | null;
   orderNo?: string | null;

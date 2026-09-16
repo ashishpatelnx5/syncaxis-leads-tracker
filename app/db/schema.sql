@@ -14,7 +14,7 @@ IF OBJECT_ID('dbo.Customers', 'U') IS NOT NULL DROP TABLE dbo.Customers;
 GO
 
 -- Customer Master: one row per company/contact. A customer can have many leads
--- (enquiries) raised against them over time.
+-- (inquiries) raised against them over time.
 CREATE TABLE dbo.Customers (
     Id                INT IDENTITY(1,1) PRIMARY KEY,
     CustomerCode      NVARCHAR(50)  NULL,
@@ -37,11 +37,11 @@ CREATE TABLE dbo.Customers (
 );
 GO
 
--- Leads Master: one row per enquiry, linked to the customer it was raised by/for.
+-- Leads Master: one row per inquiry, linked to the customer it was raised by/for.
 CREATE TABLE dbo.Leads (
     Id                  INT IDENTITY(1,1) PRIMARY KEY,
     CustomerId          INT NOT NULL CONSTRAINT FK_Leads_Customers REFERENCES dbo.Customers(Id),
-    EnquiryNumber       NVARCHAR(50)    NULL,
+    InquiryNumber       NVARCHAR(50)    NULL,
     ApplicationCategory NVARCHAR(200)   NULL,
     ApplicationDetail   NVARCHAR(500)   NULL,
     ProductInterest     NVARCHAR(200)   NULL,
@@ -57,7 +57,7 @@ CREATE TABLE dbo.Leads (
     MovedToSourcePro    BIT             NOT NULL CONSTRAINT DF_Leads_MovedToSourcePro DEFAULT 0,
     LeadValue           DECIMAL(18,2)   NULL,
     LeadGeneratedBy     NVARCHAR(200)   NULL,
-    EnquiryAssignedTo   NVARCHAR(200)   NULL,
+    InquiryAssignedTo   NVARCHAR(200)   NULL,
     UpdatedBy           NVARCHAR(200)   NULL,
     NextFollowUpDate    DATE            NULL,
     ErpLeadNumber       NVARCHAR(100)   NULL,
@@ -82,9 +82,9 @@ CREATE TABLE dbo.Followups (
 GO
 
 -- Files attached to a lead (quotes, photos, drawings, etc). The actual bytes
--- live on disk under <UPLOADS_DIR>/leads/<EnquiryNumber>/<FileName> - this
+-- live on disk under <UPLOADS_DIR>/leads/<InquiryNumber>/<FileName> - this
 -- table just tracks which files belong to which lead. FileName is the
--- standardized <EnquiryNumber>_<timestamp> name actually on disk (also what's
+-- standardized <InquiryNumber>_<timestamp> name actually on disk (also what's
 -- shown/downloaded-as in the UI) - there's no separate "original upload name"
 -- kept anywhere.
 CREATE TABLE dbo.LeadAttachments (
@@ -99,14 +99,14 @@ CREATE TABLE dbo.LeadAttachments (
 );
 GO
 
--- One row per stage a lead has ever entered (Enquiry/Discovery/Quotation/
+-- One row per stage a lead has ever entered (Inquiry/Discovery/Quotation/
 -- SalesOrder/Closed), timestamped - lets the pipeline view compute how long
 -- a lead spent in each stage ("aging"), not just its current status.
 CREATE TABLE dbo.LeadStageHistory (
     Id          INT IDENTITY(1,1) PRIMARY KEY,
     LeadId      INT NOT NULL CONSTRAINT FK_LeadStageHistory_Leads REFERENCES dbo.Leads(Id) ON DELETE CASCADE,
     Stage       NVARCHAR(20) NOT NULL
-        CONSTRAINT CK_LeadStageHistory_Stage CHECK (Stage IN ('Enquiry','Discovery','Quotation','SalesOrder','Closed')),
+        CONSTRAINT CK_LeadStageHistory_Stage CHECK (Stage IN ('Inquiry','Discovery','Quotation','SalesOrder','Closed')),
     EnteredAt   DATETIME2 NOT NULL CONSTRAINT DF_LeadStageHistory_EnteredAt DEFAULT SYSUTCDATETIME()
 );
 GO
@@ -120,7 +120,7 @@ CREATE INDEX IX_Leads_CustomerId ON dbo.Leads(CustomerId) WHERE IsDeleted = 0;
 CREATE INDEX IX_Leads_FollowUpStatus ON dbo.Leads(FollowUpStatus) WHERE IsDeleted = 0;
 CREATE INDEX IX_Leads_Priority ON dbo.Leads(Priority) WHERE IsDeleted = 0;
 CREATE INDEX IX_Leads_NextFollowUpDate ON dbo.Leads(NextFollowUpDate) WHERE IsDeleted = 0;
-CREATE INDEX IX_Leads_EnquiryAssignedTo ON dbo.Leads(EnquiryAssignedTo) WHERE IsDeleted = 0;
+CREATE INDEX IX_Leads_InquiryAssignedTo ON dbo.Leads(InquiryAssignedTo) WHERE IsDeleted = 0;
 
 CREATE INDEX IX_Followups_LeadId ON dbo.Followups(LeadId);
 

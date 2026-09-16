@@ -23,7 +23,7 @@ router.get('/', async (_req: Request, res: Response) => {
     const [applicationCategories, inquirySources, assignees, generators, productInterests, countries, states, cities] = await Promise.all([
       distinctValues(pool, 'Leads', 'ApplicationCategory'),
       distinctValues(pool, 'Leads', 'InquirySource'),
-      distinctValues(pool, 'Leads', 'EnquiryAssignedTo'),
+      distinctValues(pool, 'Leads', 'InquiryAssignedTo'),
       distinctValues(pool, 'Leads', 'LeadGeneratedBy'),
       distinctValues(pool, 'Leads', 'ProductInterest'),
       distinctValues(pool, 'Customers', 'Country'),

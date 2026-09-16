@@ -49,14 +49,14 @@ export function isInlineViewable(originalName: string): boolean {
   return INLINE_EXTENSIONS.has(extOf(originalName));
 }
 
-// Enquiry numbers look like "SI/2627/2135" - "/" can't appear in a single path
+// Inquiry numbers look like "SI/2627/2135" - "/" can't appear in a single path
 // segment, so this doubles as the folder name and the filename prefix.
 export function sanitizeForPath(value: string): string {
   return value.replace(/[\\/:*?"<>|]/g, '-').replace(/\s+/g, ' ').trim() || 'unknown';
 }
 
-export function leadFolder(enquiryNumber: string): string {
-  return path.join(config.uploads.dir, 'leads', sanitizeForPath(enquiryNumber));
+export function leadFolder(inquiryNumber: string): string {
+  return path.join(config.uploads.dir, 'leads', sanitizeForPath(inquiryNumber));
 }
 
 // <YYYYMMDD>_<hhmmss><cc> - cc is 2 digits of centiseconds (milliseconds/10),
@@ -69,14 +69,14 @@ function timestampStamp(): string {
   return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}${centiseconds}`;
 }
 
-// Stored filenames are <EnquiryNumber>_<YYYYMMDD>_<hhmmsscc><ext> - not the
-// original name - so files are identifiable by enquiry number at a glance
+// Stored filenames are <InquiryNumber>_<YYYYMMDD>_<hhmmsscc><ext> - not the
+// original name - so files are identifiable by inquiry number at a glance
 // even outside the folder they live in. A "(1)", "(2)", ... suffix is
 // appended only if that exact name already exists, to avoid ever overwriting
 // an existing file.
-export function reserveFileName(folder: string, enquiryNumber: string, originalName: string): string {
+export function reserveFileName(folder: string, inquiryNumber: string, originalName: string): string {
   const ext = extOf(originalName);
-  const base = `${sanitizeForPath(enquiryNumber)}_${timestampStamp()}`;
+  const base = `${sanitizeForPath(inquiryNumber)}_${timestampStamp()}`;
   let candidate = `${base}${ext}`;
   let attempt = 0;
   while (fs.existsSync(path.join(folder, candidate))) {
@@ -88,14 +88,14 @@ export function reserveFileName(folder: string, enquiryNumber: string, originalN
 
 const storage = multer.diskStorage({
   destination: (req, _file, cb) => {
-    const folder = leadFolder((req as any).enquiryNumber);
+    const folder = leadFolder((req as any).inquiryNumber);
     fs.mkdirSync(folder, { recursive: true });
     cb(null, folder);
   },
   filename: (req, file, cb) => {
-    const enquiryNumber = (req as any).enquiryNumber;
-    const folder = leadFolder(enquiryNumber);
-    cb(null, reserveFileName(folder, enquiryNumber, file.originalname));
+    const inquiryNumber = (req as any).inquiryNumber;
+    const folder = leadFolder(inquiryNumber);
+    cb(null, reserveFileName(folder, inquiryNumber, file.originalname));
   },
 });
 

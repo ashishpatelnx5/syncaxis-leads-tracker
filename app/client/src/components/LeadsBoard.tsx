@@ -8,7 +8,7 @@ import { formatInr } from '../utils/format';
 import { ChevronLeftIcon, ChevronRightIcon } from './icons';
 
 const STAGE_LABELS: Record<(typeof PIPELINE_STAGES)[number], string> = {
-  Enquiry: 'Enquiry',
+  Inquiry: 'Inquiry',
   Discovery: 'Discovery',
   Quotation: 'Quotation',
   SalesOrder: 'Sales Order',
@@ -68,7 +68,7 @@ function LeadPipelineCard({ lead, onAdvance }: { lead: PipelineLead; onAdvance: 
         <span className="lead-card-company">{lead.customer.companyName}</span>
         <PriorityBadge priority={lead.priority} />
       </div>
-      <div className="lead-card-meta">{lead.enquiryNumber || '-'}</div>
+      <div className="lead-card-meta">{lead.inquiryNumber || '-'}</div>
       {lead.leadValue !== null && <div className="lead-card-value">{formatInr(lead.leadValue)}</div>}
 
       {isClosed ? (
@@ -115,7 +115,7 @@ function LeadPipelineCard({ lead, onAdvance }: { lead: PipelineLead; onAdvance: 
         <span className={`lead-card-followup${isOverdue(lead) ? ' text-bad' : ''}`}>
           {lead.nextFollowUpDate ? `Next: ${lead.nextFollowUpDate}` : 'No follow-up set'}
         </span>
-        {lead.enquiryAssignedTo && <span className="lead-card-assignee">{lead.enquiryAssignedTo}</span>}
+        {lead.inquiryAssignedTo && <span className="lead-card-assignee">{lead.inquiryAssignedTo}</span>}
       </div>
     </div>
   );
@@ -172,7 +172,7 @@ export function LeadsBoard() {
       <form className="filter-bar" onSubmit={handleSearchSubmit}>
         <input
           type="text"
-          placeholder="Search company, contact, email, phone, enquiry #..."
+          placeholder="Search company, contact, email, phone, inquiry #..."
           value={q}
           onChange={(e) => setQ(e.target.value)}
           className="search-input"

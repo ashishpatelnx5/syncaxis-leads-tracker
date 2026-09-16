@@ -8,17 +8,17 @@ import { actorName } from '../auth';
 
 const router = Router();
 
-// Also stashes the lead's EnquiryNumber on the request - the multer storage
+// Also stashes the lead's InquiryNumber on the request - the multer storage
 // callbacks (destination/filename) need it to place the file in the right
-// enquiry-numbered folder, and can't look it up themselves (no DB access there).
+// inquiry-numbered folder, and can't look it up themselves (no DB access there).
 async function ensureLeadExists(req: Request, res: Response, next: NextFunction) {
   const leadId = Number(req.params.id);
   if (!Number.isInteger(leadId)) return res.status(400).json({ error: 'Invalid lead id' });
   try {
     const pool = await getPool();
-    const result = await pool.request().input('id', sql.Int, leadId).query('SELECT EnquiryNumber FROM dbo.Leads WHERE Id = @id AND IsDeleted = 0');
+    const result = await pool.request().input('id', sql.Int, leadId).query('SELECT InquiryNumber FROM dbo.Leads WHERE Id = @id AND IsDeleted = 0');
     if (!result.recordset.length) return res.status(404).json({ error: 'Lead not found' });
-    (req as any).enquiryNumber = result.recordset[0].EnquiryNumber;
+    (req as any).inquiryNumber = result.recordset[0].InquiryNumber;
     next();
   } catch (err) {
     console.error(err);
@@ -101,14 +101,14 @@ router.get('/attachments/:id/file', async (req: Request, res: Response) => {
       .request()
       .input('id', sql.Int, id)
       .query(`
-        SELECT A.*, L.EnquiryNumber
+        SELECT A.*, L.InquiryNumber
         FROM dbo.LeadAttachments A JOIN dbo.Leads L ON L.Id = A.LeadId
         WHERE A.Id = @id AND A.IsDeleted = 0
       `);
     if (!result.recordset.length) return res.status(404).json({ error: 'Attachment not found' });
 
     const row = result.recordset[0];
-    const filePath = path.join(leadFolder(row.EnquiryNumber), row.FileName);
+    const filePath = path.join(leadFolder(row.InquiryNumber), row.FileName);
     if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'File is missing on disk' });
 
     const disposition = isInlineViewable(row.FileName) ? 'inline' : 'attachment';
@@ -154,14 +154,14 @@ router.delete('/attachments/:id', async (req: Request, res: Response) => {
       .request()
       .input('id', sql.Int, id)
       .query(`
-        SELECT A.FileName, L.EnquiryNumber
+        SELECT A.FileName, L.InquiryNumber
         FROM dbo.LeadAttachments A JOIN dbo.Leads L ON L.Id = A.LeadId
         WHERE A.Id = @id AND A.IsDeleted = 0
       `);
     if (!lookup.recordset.length) return res.status(404).json({ error: 'Attachment not found' });
 
-    const { FileName, EnquiryNumber } = lookup.recordset[0];
-    const folder = leadFolder(EnquiryNumber);
+    const { FileName, InquiryNumber } = lookup.recordset[0];
+    const folder = leadFolder(InquiryNumber);
     const oldPath = path.join(folder, FileName);
     let newFileName = FileName;
 

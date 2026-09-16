@@ -121,13 +121,13 @@ export function LeadFormPage() {
         </fieldset>
 
         <fieldset>
-          <legend>Enquiry Details</legend>
+          <legend>Inquiry Details</legend>
           <div className="form-grid form-grid-2col">
             <label className="field-narrow">
-              Enquiry Number
+              Inquiry Number
               <input
                 disabled
-                value={leadForm.enquiryNumber || ''}
+                value={leadForm.inquiryNumber || ''}
                 placeholder="Auto-generated on save"
                 title="System-assigned - can't be changed"
               />
@@ -184,8 +184,8 @@ export function LeadFormPage() {
           <legend>Ownership &amp; Status</legend>
           <div className="form-grid form-grid-2col">
             <label>
-              Enquiry Assigned To
-              <input list="assignees" value={leadForm.enquiryAssignedTo || ''} onChange={(e) => setLead('enquiryAssignedTo', e.target.value)} />
+              Inquiry Assigned To
+              <input list="assignees" value={leadForm.inquiryAssignedTo || ''} onChange={(e) => setLead('inquiryAssignedTo', e.target.value)} />
               <datalist id="assignees">
                 {meta?.assignees.map((v) => <option key={v} value={v} />)}
               </datalist>

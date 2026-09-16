@@ -22,11 +22,11 @@ export const TERMINAL_STATUSES_SQL = `(${TERMINAL_STATUSES.map((s) => `'${s}'`).
 // stages (plus a terminal Closed bucket for Lost/Not Relevant) - this is the
 // single source of truth for that grouping, the status a lead is set to when
 // it advances into a stage, and what must be filled in before leaving one.
-export const PIPELINE_STAGES = ['Enquiry', 'Discovery', 'Quotation', 'SalesOrder'] as const;
+export const PIPELINE_STAGES = ['Inquiry', 'Discovery', 'Quotation', 'SalesOrder'] as const;
 export type PipelineStage = (typeof PIPELINE_STAGES)[number] | 'Closed';
 
 export const STAGE_STATUSES: Record<PipelineStage, readonly FollowUpStatus[]> = {
-  Enquiry: ['Not Contacted', 'Contacted'],
+  Inquiry: ['Not Contacted', 'Contacted'],
   Discovery: ['Meeting Scheduled'],
   Quotation: ['Quotation Sent', 'Awaiting Response'],
   SalesOrder: ['Won'],
@@ -34,7 +34,7 @@ export const STAGE_STATUSES: Record<PipelineStage, readonly FollowUpStatus[]> = 
 };
 
 export const STAGE_ENTRY_STATUS: Record<(typeof PIPELINE_STAGES)[number], FollowUpStatus> = {
-  Enquiry: 'Contacted',
+  Inquiry: 'Contacted',
   Discovery: 'Meeting Scheduled',
   Quotation: 'Quotation Sent',
   SalesOrder: 'Won',
@@ -43,7 +43,7 @@ export const STAGE_ENTRY_STATUS: Record<(typeof PIPELINE_STAGES)[number], Follow
 // Lead fields (as used in the API request/response body, camelCase) that must
 // be filled in before a lead can leave this stage for the next one.
 export const STAGE_GATING_FIELDS: Record<(typeof PIPELINE_STAGES)[number], string[]> = {
-  Enquiry: ['productInterest', 'applicationDetail'],
+  Inquiry: ['productInterest', 'applicationDetail'],
   Discovery: ['leadValue'],
   Quotation: ['erpLeadNumber', 'orderNo'],
   SalesOrder: [],
@@ -118,7 +118,7 @@ export interface Lead {
   id: number;
   customerId: number;
   customer: Customer;
-  enquiryNumber: string | null;
+  inquiryNumber: string | null;
   applicationCategory: string | null;
   applicationDetail: string | null;
   productInterest: string | null;
@@ -130,7 +130,7 @@ export interface Lead {
   movedToSourcePro: boolean;
   leadValue: number | null;
   leadGeneratedBy: string | null;
-  enquiryAssignedTo: string | null;
+  inquiryAssignedTo: string | null;
   updatedBy: string | null;
   nextFollowUpDate: string | null;
   erpLeadNumber: string | null;

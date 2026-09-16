@@ -65,7 +65,7 @@ export function CustomerDetailPage() {
             <table>
               <thead>
                 <tr>
-                  <th>Enquiry</th>
+                  <th>Inquiry</th>
                   <th>Status</th>
                   <th>Priority</th>
                   <th>Next Follow-up</th>
@@ -75,7 +75,7 @@ export function CustomerDetailPage() {
               <tbody>
                 {leads.map((lead) => (
                   <tr key={lead.id}>
-                    <td><Link to={`/leads/${lead.id}`}>{lead.enquiryNumber || `Lead #${lead.id}`}</Link></td>
+                    <td><Link to={`/leads/${lead.id}`}>{lead.inquiryNumber || `Lead #${lead.id}`}</Link></td>
                     <td><StatusBadge status={lead.followUpStatus} /></td>
                     <td><PriorityBadge priority={lead.priority} /></td>
                     <td>{lead.nextFollowUpDate || '-'}</td>

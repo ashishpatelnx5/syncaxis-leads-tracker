@@ -85,9 +85,9 @@ router.get('/dashboard', async (_req: Request, res: Response) => {
         ORDER BY Cnt DESC
       `),
       pool.request().query(`
-        SELECT ISNULL(NULLIF(LTRIM(RTRIM(EnquiryAssignedTo)), ''), 'Unassigned') AS Assignee, COUNT(*) AS Cnt
+        SELECT ISNULL(NULLIF(LTRIM(RTRIM(InquiryAssignedTo)), ''), 'Unassigned') AS Assignee, COUNT(*) AS Cnt
         FROM dbo.Leads WHERE IsDeleted = 0
-        GROUP BY ISNULL(NULLIF(LTRIM(RTRIM(EnquiryAssignedTo)), ''), 'Unassigned')
+        GROUP BY ISNULL(NULLIF(LTRIM(RTRIM(InquiryAssignedTo)), ''), 'Unassigned')
         ORDER BY Cnt DESC
       `),
       pool.request().query(`
@@ -327,7 +327,7 @@ const METRIC_CONFIG: Record<string, { from: string; personExpr: string; dateExpr
   },
   orders: {
     from: 'dbo.Leads L',
-    personExpr: `ISNULL(NULLIF(LTRIM(RTRIM(L.EnquiryAssignedTo)), ''), 'Unassigned')`,
+    personExpr: `ISNULL(NULLIF(LTRIM(RTRIM(L.InquiryAssignedTo)), ''), 'Unassigned')`,
     dateExpr: 'L.OrderDate',
     where: 'L.IsDeleted = 0 AND L.OrderDate IS NOT NULL',
   },

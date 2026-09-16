@@ -11,7 +11,7 @@ export type FollowUpStatus =
 export type Priority = 'Hot' | 'Warm' | 'Cold';
 export type LeadType = 'Project' | 'Trading' | 'Other';
 
-export const PIPELINE_STAGES = ['Enquiry', 'Discovery', 'Quotation', 'SalesOrder'] as const;
+export const PIPELINE_STAGES = ['Inquiry', 'Discovery', 'Quotation', 'SalesOrder'] as const;
 export type PipelineStage = (typeof PIPELINE_STAGES)[number] | 'Closed';
 
 export interface LeadStageHistoryEntry {
@@ -46,7 +46,7 @@ export interface Lead {
   id: number;
   customerId: number;
   customer: Customer;
-  enquiryNumber: string | null;
+  inquiryNumber: string | null;
   applicationCategory: string | null;
   applicationDetail: string | null;
   productInterest: string | null;
@@ -58,7 +58,7 @@ export interface Lead {
   movedToSourcePro: boolean;
   leadValue: number | null;
   leadGeneratedBy: string | null;
-  enquiryAssignedTo: string | null;
+  inquiryAssignedTo: string | null;
   updatedBy: string | null;
   nextFollowUpDate: string | null;
   erpLeadNumber: string | null;

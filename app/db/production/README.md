@@ -70,4 +70,4 @@ npm run import-excel
 ```
 
 This is safe to run once against an empty `Leads` table; re-running it will insert
-duplicate rows, since it doesn't check for existing enquiry numbers.
+duplicate rows, since it doesn't check for existing inquiry numbers.
