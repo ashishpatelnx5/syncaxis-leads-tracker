@@ -6,6 +6,7 @@ SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 GO
 
+IF OBJECT_ID('dbo.AuditLog', 'U') IS NOT NULL DROP TABLE dbo.AuditLog;
 IF OBJECT_ID('dbo.LeadStageHistory', 'U') IS NOT NULL DROP TABLE dbo.LeadStageHistory;
 IF OBJECT_ID('dbo.LeadAttachments', 'U') IS NOT NULL DROP TABLE dbo.LeadAttachments;
 IF OBJECT_ID('dbo.Followups', 'U') IS NOT NULL DROP TABLE dbo.Followups;
@@ -127,4 +128,31 @@ CREATE INDEX IX_Followups_LeadId ON dbo.Followups(LeadId);
 CREATE INDEX IX_LeadAttachments_LeadId ON dbo.LeadAttachments(LeadId) WHERE IsDeleted = 0;
 
 CREATE INDEX IX_LeadStageHistory_LeadId ON dbo.LeadStageHistory(LeadId);
+GO
+
+-- One row per tracked user action (auth events, and create/update/delete on
+-- leads/customers/followups/attachments, including denied attempts) - the
+-- admin-only Audit Log page. UserId is syncaxis-iam's numeric user id, not a
+-- local FK (this app has no Users table of its own - identity lives in
+-- syncaxis-iam); Username/DisplayName are denormalized so a log entry stays
+-- readable even if that account is later renamed or deactivated.
+CREATE TABLE dbo.AuditLog (
+    Id           INT IDENTITY(1,1) PRIMARY KEY,
+    UserId       INT           NULL,
+    Username     NVARCHAR(200) NULL,
+    DisplayName  NVARCHAR(200) NULL,
+    Action       NVARCHAR(100) NOT NULL,
+    EntityType   NVARCHAR(50)  NULL,
+    EntityId     INT           NULL,
+    Success      BIT           NOT NULL CONSTRAINT DF_AuditLog_Success DEFAULT 1,
+    Details      NVARCHAR(MAX) NULL,
+    IpAddress    NVARCHAR(50)  NULL,
+    CreatedAt    DATETIME2     NOT NULL CONSTRAINT DF_AuditLog_CreatedAt DEFAULT SYSUTCDATETIME()
+);
+GO
+
+CREATE INDEX IX_AuditLog_CreatedAt ON dbo.AuditLog(CreatedAt DESC);
+CREATE INDEX IX_AuditLog_UserId ON dbo.AuditLog(UserId);
+CREATE INDEX IX_AuditLog_Action ON dbo.AuditLog(Action);
+CREATE INDEX IX_AuditLog_EntityType_EntityId ON dbo.AuditLog(EntityType, EntityId);
 GO

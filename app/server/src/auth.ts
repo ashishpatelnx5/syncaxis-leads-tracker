@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { Request, Response, NextFunction } from 'express';
 import { config } from './config';
+import { logAudit, auditActor } from './audit';
 
 export const SESSION_COOKIE = 'syncaxis_session';
 // Hard cap on a session's lifetime - matches syncaxis-iam's own JWT expiry.
@@ -41,8 +42,13 @@ export function createSession(data: Omit<SessionRecord, 'lastVerifiedAt' | 'expi
   return id;
 }
 
-export function destroySession(sessionId: string | undefined): void {
-  if (sessionId) sessions.delete(sessionId);
+// Returns the session that was removed (if any) - callers that need to know
+// who just logged out (for the audit log) don't have to look it up separately.
+export function destroySession(sessionId: string | undefined): SessionRecord | undefined {
+  if (!sessionId) return undefined;
+  const session = sessions.get(sessionId);
+  sessions.delete(sessionId);
+  return session;
 }
 
 // The name written into attribution fields (LeadGeneratedBy, AddedBy,
@@ -91,6 +97,12 @@ export function hasAnyLeadsAccess(access: { perms: string[]; isFullAccess: boole
 export function requirePermission(key: string) {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.session || !hasPermission(req.session, key)) {
+      logAudit({
+        ...auditActor(req),
+        action: 'permission.denied',
+        success: false,
+        details: { requiredPermission: key, method: req.method, path: req.originalUrl },
+      });
       return res.status(403).json({ error: 'You do not have access to this.' });
     }
     next();

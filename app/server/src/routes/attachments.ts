@@ -5,6 +5,7 @@ import { getPool, sql } from '../db';
 import { mapAttachmentRow } from '../mappers';
 import { uploadLeadAttachments, contentTypeFor, isInlineViewable, leadFolder, reserveDeletedFileName, MAX_FILE_SIZE_BYTES } from '../uploads';
 import { actorName, requirePermission, LEADS_PERM } from '../auth';
+import { logAudit, auditActor } from '../audit';
 
 const router = Router();
 
@@ -81,7 +82,15 @@ router.post(
             OUTPUT INSERTED.*
             VALUES (@leadId, @fileName, @contentType, @fileSizeBytes, @uploadedBy)
           `);
-        inserted.push(mapAttachmentRow(result.recordset[0]));
+        const attachment = mapAttachmentRow(result.recordset[0]);
+        inserted.push(attachment);
+        logAudit({
+          ...auditActor(req),
+          action: 'attachment.upload',
+          entityType: 'Attachment',
+          entityId: attachment.id,
+          details: { leadId, originalName: file.originalname, fileName: attachment.fileName, contentType: attachment.contentType, fileSizeBytes: attachment.fileSizeBytes },
+        });
       }
       res.status(201).json(inserted);
     } catch (err) {
@@ -155,13 +164,13 @@ router.delete('/attachments/:id', requirePermission(LEADS_PERM.LEADS_UPDATE), as
       .request()
       .input('id', sql.Int, id)
       .query(`
-        SELECT A.FileName, L.InquiryNumber
+        SELECT A.FileName, A.LeadId, L.InquiryNumber
         FROM dbo.LeadAttachments A JOIN dbo.Leads L ON L.Id = A.LeadId
         WHERE A.Id = @id AND A.IsDeleted = 0
       `);
     if (!lookup.recordset.length) return res.status(404).json({ error: 'Attachment not found' });
 
-    const { FileName, InquiryNumber } = lookup.recordset[0];
+    const { FileName, LeadId, InquiryNumber } = lookup.recordset[0];
     const folder = leadFolder(InquiryNumber);
     const oldPath = path.join(folder, FileName);
     let newFileName = FileName;
@@ -179,6 +188,14 @@ router.delete('/attachments/:id', requirePermission(LEADS_PERM.LEADS_UPDATE), as
       .input('id', sql.Int, id)
       .input('fileName', sql.NVarChar, newFileName)
       .query('UPDATE dbo.LeadAttachments SET IsDeleted = 1, FileName = @fileName WHERE Id = @id');
+
+    logAudit({
+      ...auditActor(req),
+      action: 'attachment.delete',
+      entityType: 'Attachment',
+      entityId: id,
+      details: { leadId: LeadId, fileName: FileName },
+    });
 
     res.status(204).send();
   } catch (err) {

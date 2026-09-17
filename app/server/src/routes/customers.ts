@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { getPool, sql } from '../db';
 import { mapCustomerRow, mapLeadRow, CUSTOMER_JOIN_COLUMNS } from '../mappers';
 import { requirePermission, actorName, LEADS_PERM } from '../auth';
+import { logAudit, auditActor, diffFields } from '../audit';
 
 const router = Router();
 
@@ -126,6 +127,14 @@ function bindCustomerInputs(request: any, body: any) {
   request.input('pincode', sql.NVarChar, body.pincode || null);
 }
 
+// Columns diffed for the audit log on update - excludes Id/CustomerCode
+// (system-assigned, immutable)/AddedBy (set once at creation)/CreatedAt/
+// UpdatedAt/UpdatedBy (redundant with the audit row's own actor field).
+const CUSTOMER_AUDIT_FIELDS = [
+  'CompanyName', 'Department', 'ContactPersonName', 'Email', 'Phone', 'GSTIN',
+  'Address', 'Country', 'State', 'City', 'Pincode',
+];
+
 const GSTIN_PATTERN = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
 
 function validateGstin(body: any): string | null {
@@ -161,7 +170,11 @@ router.post('/', requirePermission(LEADS_PERM.CUSTOMERS_CREATE), async (req: Req
     `);
     const newId = result.recordset[0].Id;
     const customerResult = await pool.request().input('id', sql.Int, newId).query(`${CUSTOMER_SELECT_BASE} WHERE C.Id = @id`);
-    res.status(201).json(mapCustomerRow(customerResult.recordset[0]));
+    const created = mapCustomerRow(customerResult.recordset[0]);
+
+    logAudit({ ...auditActor(req), action: 'customer.create', entityType: 'Customer', entityId: newId, details: { created } });
+
+    res.status(201).json(created);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to create customer' });
@@ -186,7 +199,7 @@ router.put('/:id', requirePermission(LEADS_PERM.CUSTOMERS_UPDATE), async (req: R
 
   try {
     const pool = await getPool();
-    const existing = await pool.request().input('id', sql.Int, id).query('SELECT Id FROM dbo.Customers WHERE Id = @id AND IsDeleted = 0');
+    const existing = await pool.request().input('id', sql.Int, id).query('SELECT * FROM dbo.Customers WHERE Id = @id AND IsDeleted = 0');
     if (!existing.recordset.length) return res.status(404).json({ error: 'Customer not found' });
 
     const request = pool.request();
@@ -200,6 +213,12 @@ router.put('/:id', requirePermission(LEADS_PERM.CUSTOMERS_UPDATE), async (req: R
         Country = @country, State = @state, City = @city, Pincode = @pincode, UpdatedBy = @updatedBy, UpdatedAt = SYSUTCDATETIME()
       WHERE Id = @id
     `);
+
+    const afterRaw = await pool.request().input('id', sql.Int, id).query('SELECT * FROM dbo.Customers WHERE Id = @id');
+    const changes = diffFields(existing.recordset[0], afterRaw.recordset[0], CUSTOMER_AUDIT_FIELDS);
+    if (Object.keys(changes).length) {
+      logAudit({ ...auditActor(req), action: 'customer.update', entityType: 'Customer', entityId: id, details: { changes } });
+    }
 
     const customerResult = await pool.request().input('id', sql.Int, id).query(`${CUSTOMER_SELECT_BASE} WHERE C.Id = @id`);
     res.json(mapCustomerRow(customerResult.recordset[0]));
@@ -218,7 +237,7 @@ router.delete('/:id', requirePermission(LEADS_PERM.CUSTOMERS_DELETE), async (req
 
   try {
     const pool = await getPool();
-    const existing = await pool.request().input('id', sql.Int, id).query('SELECT Id FROM dbo.Customers WHERE Id = @id AND IsDeleted = 0');
+    const existing = await pool.request().input('id', sql.Int, id).query('SELECT Id, CompanyName, CustomerCode FROM dbo.Customers WHERE Id = @id AND IsDeleted = 0');
     if (!existing.recordset.length) return res.status(404).json({ error: 'Customer not found' });
 
     const leadCount = await pool.request().input('id', sql.Int, id).query('SELECT COUNT(*) AS Cnt FROM dbo.Leads WHERE CustomerId = @id AND IsDeleted = 0');
@@ -227,6 +246,15 @@ router.delete('/:id', requirePermission(LEADS_PERM.CUSTOMERS_DELETE), async (req
     }
 
     await pool.request().input('id', sql.Int, id).query('UPDATE dbo.Customers SET IsDeleted = 1, UpdatedAt = SYSUTCDATETIME() WHERE Id = @id');
+
+    logAudit({
+      ...auditActor(req),
+      action: 'customer.delete',
+      entityType: 'Customer',
+      entityId: id,
+      details: { companyName: existing.recordset[0].CompanyName, customerCode: existing.recordset[0].CustomerCode },
+    });
+
     res.status(204).send();
   } catch (err) {
     console.error(err);

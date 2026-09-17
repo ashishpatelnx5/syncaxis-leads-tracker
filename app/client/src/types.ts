@@ -96,6 +96,20 @@ export interface Attachment {
   createdAt: string;
 }
 
+export interface AuditLogEntry {
+  id: number;
+  userId: number | null;
+  username: string | null;
+  displayName: string | null;
+  action: string;
+  entityType: string | null;
+  entityId: number | null;
+  success: boolean;
+  details: unknown;
+  ipAddress: string | null;
+  createdAt: string;
+}
+
 export interface LeadListResponse {
   items: Lead[];
   total: number;

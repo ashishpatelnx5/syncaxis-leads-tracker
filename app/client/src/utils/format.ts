@@ -49,3 +49,12 @@ export function formatDate(value: string | null | undefined): string {
   if (Number.isNaN(date.getTime())) return '-';
   return date.toISOString().slice(0, 10);
 }
+
+// Date + time (local), for timestamps precise to the minute - the audit log,
+// where "which day" alone isn't enough to tell entries apart.
+export function formatDateTime(value: string | null | undefined): string {
+  if (!value) return '-';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '-';
+  return date.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+}

@@ -17,6 +17,7 @@ import { CustomerFormPage } from './pages/CustomerFormPage';
 import { CustomerDetailPage } from './pages/CustomerDetailPage';
 import { AdminLeadsPage } from './pages/AdminLeadsPage';
 import { AdminCustomersPage } from './pages/AdminCustomersPage';
+import { AuditLogPage } from './pages/AuditLogPage';
 
 function AppShell() {
   const { authenticated, checking, user, can } = useAuth();
@@ -55,6 +56,7 @@ function AppShell() {
               <Route path="/admin" element={<Navigate to="/admin/leads" replace />} />
               <Route path="/admin/leads" element={user?.isAdmin ? <AdminLeadsPage /> : <Navigate to="/" replace />} />
               <Route path="/admin/customers" element={user?.isAdmin ? <AdminCustomersPage /> : <Navigate to="/" replace />} />
+              <Route path="/admin/audit-log" element={user?.isAdmin ? <AuditLogPage /> : <Navigate to="/" replace />} />
             </Routes>
           </main>
         </div>

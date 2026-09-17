@@ -9,6 +9,7 @@ import metaRouter from './routes/meta';
 import customersRouter from './routes/customers';
 import statsRouter from './routes/stats';
 import authRouter from './routes/auth';
+import auditLogRouter from './routes/auditLog';
 import { requireAuth } from './auth';
 
 export function createApp() {
@@ -27,6 +28,7 @@ export function createApp() {
   app.use('/api/meta', requireAuth, metaRouter);
   app.use('/api/customers', requireAuth, customersRouter);
   app.use('/api/stats', requireAuth, statsRouter);
+  app.use('/api/audit-log', requireAuth, auditLogRouter);
 
   // __dirname is server/src in dev and server/dist once compiled (both one
   // level under server/), so two levels up reaches the repo root either way.

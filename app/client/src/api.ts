@@ -1,4 +1,4 @@
-import type { Lead, Followup, Attachment, LeadListResponse, CustomerListResponse, MetaResponse, Customer, CustomerInput, PipelineLead } from './types';
+import type { Lead, Followup, Attachment, LeadListResponse, CustomerListResponse, MetaResponse, Customer, CustomerInput, PipelineLead, AuditLogEntry } from './types';
 
 export class ApiError extends Error {
   status: number;
@@ -329,4 +329,35 @@ export function updateCustomer(id: number, data: CustomerInput): Promise<Custome
 
 export function deleteCustomer(id: number): Promise<void> {
   return request(`/customers/${id}`, { method: 'DELETE' });
+}
+
+export interface AuditLogFilters {
+  username?: string;
+  action?: string;
+  entityType?: string;
+  success?: boolean;
+  dateFrom?: string;
+  dateTo?: string;
+  q?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface AuditLogListResponse {
+  items: AuditLogEntry[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export function fetchAuditLog(filters: AuditLogFilters): Promise<AuditLogListResponse> {
+  const params = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') params.set(key, String(value));
+  });
+  return request(`/audit-log?${params.toString()}`);
+}
+
+export function fetchAuditLogActions(): Promise<string[]> {
+  return request('/audit-log/actions');
 }

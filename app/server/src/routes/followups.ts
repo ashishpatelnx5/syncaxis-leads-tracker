@@ -4,6 +4,7 @@ import { mapFollowupRow } from '../mappers';
 import { FOLLOW_UP_STATUS_OPTIONS } from '../types';
 import { logStageChangeIfNeeded } from './leads';
 import { actorName, requirePermission, LEADS_PERM } from '../auth';
+import { logAudit, auditActor } from '../audit';
 
 const router = Router();
 
@@ -54,7 +55,10 @@ router.post('/leads/:id/followups', requirePermission(LEADS_PERM.LEADS_UPDATE), 
       );
     }
 
-    res.status(201).json(mapFollowupRow(insertResult.recordset[0]));
+    const created = mapFollowupRow(insertResult.recordset[0]);
+    logAudit({ ...auditActor(req), action: 'followup.create', entityType: 'Followup', entityId: created.id, details: { created } });
+
+    res.status(201).json(created);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to add follow-up' });
@@ -68,8 +72,20 @@ router.delete('/followups/:id', requirePermission(LEADS_PERM.LEADS_UPDATE), asyn
 
   try {
     const pool = await getPool();
+    const existing = await pool.request().input('id', sql.Int, id).query('SELECT LeadId, FollowUpDate, Note FROM dbo.Followups WHERE Id = @id');
+    if (!existing.recordset.length) return res.status(404).json({ error: 'Follow-up not found' });
+
     const result = await pool.request().input('id', sql.Int, id).query('DELETE FROM dbo.Followups WHERE Id = @id');
     if (result.rowsAffected[0] === 0) return res.status(404).json({ error: 'Follow-up not found' });
+
+    logAudit({
+      ...auditActor(req),
+      action: 'followup.delete',
+      entityType: 'Followup',
+      entityId: id,
+      details: { leadId: existing.recordset[0].LeadId, followUpDate: existing.recordset[0].FollowUpDate, note: existing.recordset[0].Note },
+    });
+
     res.status(204).send();
   } catch (err) {
     console.error(err);

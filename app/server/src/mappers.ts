@@ -1,4 +1,4 @@
-import { Lead, Followup, Customer, LeadAttachment, LeadStageHistoryEntry, PipelineStage } from './types';
+import { Lead, Followup, Customer, LeadAttachment, LeadStageHistoryEntry, PipelineStage, AuditLogEntry } from './types';
 
 // Shared by any query that joins Customers alongside another table - keeps the
 // Cust_* aliasing in one place for mapCustomerRow/mapLeadRow to rely on.
@@ -123,6 +123,30 @@ export function mapAttachmentRow(row: any): LeadAttachment {
     contentType: row.ContentType,
     fileSizeBytes: Number(row.FileSizeBytes),
     uploadedBy: row.UploadedBy,
+    createdAt: toIsoDateTime(row.CreatedAt),
+  };
+}
+
+export function mapAuditLogRow(row: any): AuditLogEntry {
+  let details: unknown = null;
+  if (row.Details) {
+    try {
+      details = JSON.parse(row.Details);
+    } catch {
+      details = row.Details; // malformed JSON somehow - surface the raw text rather than hide the row
+    }
+  }
+  return {
+    id: row.Id,
+    userId: row.UserId,
+    username: row.Username,
+    displayName: row.DisplayName,
+    action: row.Action,
+    entityType: row.EntityType,
+    entityId: row.EntityId,
+    success: !!row.Success,
+    details,
+    ipAddress: row.IpAddress,
     createdAt: toIsoDateTime(row.CreatedAt),
   };
 }

@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import ExcelJS from 'exceljs';
 import { getPool, sql } from '../db';
 import { requirePermission, actorName, LEADS_PERM } from '../auth';
+import { logAudit, auditActor, diffFields } from '../audit';
 import { mapLeadRow, mapFollowupRow, mapAttachmentRow, mapStageHistoryRow, CUSTOMER_JOIN_COLUMNS } from '../mappers';
 import {
   CARD_COLLECTED_OPTIONS,
@@ -44,6 +45,16 @@ const SORTABLE_COLUMNS: Record<string, string> = {
 function isValidEnum(value: unknown, options: readonly string[]): boolean {
   return typeof value === 'string' && options.includes(value);
 }
+
+// Columns diffed for the audit log on update - excludes Id/CreatedAt/UpdatedAt
+// (always-changing timestamps aren't a meaningful "change") and InquiryNumber/
+// LeadGeneratedBy (system-assigned/immutable, never in the SET clause) and
+// UpdatedBy (redundant with the audit row's own actor field).
+const LEAD_AUDIT_FIELDS = [
+  'CustomerId', 'ApplicationCategory', 'ApplicationDetail', 'ProductInterest', 'CardCollected',
+  'FollowUpStatus', 'Priority', 'InquirySource', 'LeadType', 'MovedToSourcePro', 'LeadValue',
+  'InquiryAssignedTo', 'NextFollowUpDate', 'ErpLeadNumber', 'OrderNo', 'OrderDate', 'ReceivedDate', 'Notes',
+];
 
 // Builds the WHERE conditions for the leads list/export, binding parameters on
 // the given request. Shared so the export endpoint always matches whatever
@@ -491,6 +502,14 @@ router.post('/:id/advance-stage', requirePermission(LEADS_PERM.LEADS_UPDATE), as
       .input('id', sql.Int, id)
       .query('SELECT Stage, EnteredAt FROM dbo.LeadStageHistory WHERE LeadId = @id ORDER BY EnteredAt ASC');
 
+    logAudit({
+      ...auditActor(req),
+      action: 'lead.advance_stage',
+      entityType: 'Lead',
+      entityId: id,
+      details: { fromStage: currentStage, toStage: nextStage, fromStatus: lead.followUpStatus, toStatus: nextStatus },
+    });
+
     res.json({
       ...mapLeadRow(updated.recordset[0]),
       stage: nextStage,
@@ -623,7 +642,11 @@ router.post('/', requirePermission(LEADS_PERM.LEADS_CREATE), async (req: Request
       .query('INSERT INTO dbo.LeadStageHistory (LeadId, Stage) VALUES (@leadId, @stage)');
 
     const leadResult = await pool.request().input('id', sql.Int, newId).query(`${LEAD_SELECT_BASE} WHERE L.Id = @id`);
-    res.status(201).json(mapLeadRow(leadResult.recordset[0]));
+    const created = mapLeadRow(leadResult.recordset[0]);
+
+    logAudit({ ...auditActor(req), action: 'lead.create', entityType: 'Lead', entityId: newId, details: { created } });
+
+    res.status(201).json(created);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to create lead' });
@@ -641,7 +664,7 @@ router.put('/:id', requirePermission(LEADS_PERM.LEADS_UPDATE), async (req: Reque
   try {
     const pool = await getPool();
 
-    const existing = await pool.request().input('id', sql.Int, id).query('SELECT Id, CustomerId, FollowUpStatus FROM dbo.Leads WHERE Id = @id AND IsDeleted = 0');
+    const existing = await pool.request().input('id', sql.Int, id).query('SELECT * FROM dbo.Leads WHERE Id = @id AND IsDeleted = 0');
     if (!existing.recordset.length) return res.status(404).json({ error: 'Lead not found' });
 
     const customerId = req.body.customerId || existing.recordset[0].CustomerId;
@@ -682,6 +705,12 @@ router.put('/:id', requirePermission(LEADS_PERM.LEADS_UPDATE), async (req: Reque
 
     await logStageChangeIfNeeded(pool, id, existing.recordset[0].FollowUpStatus, req.body.followUpStatus ?? 'Not Contacted');
 
+    const afterRaw = await pool.request().input('id', sql.Int, id).query('SELECT * FROM dbo.Leads WHERE Id = @id');
+    const changes = diffFields(existing.recordset[0], afterRaw.recordset[0], LEAD_AUDIT_FIELDS);
+    if (Object.keys(changes).length) {
+      logAudit({ ...auditActor(req), action: 'lead.update', entityType: 'Lead', entityId: id, details: { changes } });
+    }
+
     const leadResult = await pool.request().input('id', sql.Int, id).query(`${LEAD_SELECT_BASE} WHERE L.Id = @id`);
     res.json(mapLeadRow(leadResult.recordset[0]));
   } catch (err) {
@@ -697,12 +726,23 @@ router.delete('/:id', requirePermission(LEADS_PERM.LEADS_DELETE), async (req: Re
 
   try {
     const pool = await getPool();
+    const summary = await pool.request().input('id', sql.Int, id).query('SELECT InquiryNumber, CustomerId FROM dbo.Leads WHERE Id = @id AND IsDeleted = 0');
+
     const result = await pool
       .request()
       .input('id', sql.Int, id)
       .query('UPDATE dbo.Leads SET IsDeleted = 1, UpdatedAt = SYSUTCDATETIME() WHERE Id = @id AND IsDeleted = 0');
 
     if (result.rowsAffected[0] === 0) return res.status(404).json({ error: 'Lead not found' });
+
+    logAudit({
+      ...auditActor(req),
+      action: 'lead.delete',
+      entityType: 'Lead',
+      entityId: id,
+      details: { inquiryNumber: summary.recordset[0]?.InquiryNumber ?? null, customerId: summary.recordset[0]?.CustomerId ?? null },
+    });
+
     res.status(204).send();
   } catch (err) {
     console.error(err);

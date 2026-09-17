@@ -1,6 +1,7 @@
 import { Router, Request, Response as ExpressResponse } from 'express';
 import { config } from '../config';
 import { accessFromIamUser, createSession, destroySession, hasAnyLeadsAccess, hasPermission, requireAuth, LEADS_PERM, SESSION_COOKIE, SESSION_TTL_MS } from '../auth';
+import { logAudit } from '../audit';
 
 const router = Router();
 
@@ -13,9 +14,18 @@ const COOKIE_OPTIONS = {
 // Shared by /login and /sso: both end up with the same {token, user} shape
 // from syncaxis-iam (a normal login there, or a handoff-code exchange here) -
 // this is the one place that turns that into a Leads Tracker session.
-function establishSession(data: any, res: ExpressResponse): void {
+function establishSession(req: Request, data: any, res: ExpressResponse, method: 'login' | 'sso'): void {
   const { perms, isFullAccess } = accessFromIamUser(data.user);
   if (!hasAnyLeadsAccess({ perms, isFullAccess })) {
+    logAudit({
+      userId: data.user?.id ?? null,
+      username: data.user?.username ?? null,
+      displayName: data.user?.displayName ?? null,
+      action: 'auth.access_denied',
+      success: false,
+      details: { method, reason: 'no leads.* permission granted' },
+      ipAddress: req.ip,
+    });
     res.status(403).json({
       error: 'Sorry! You don\'t have access to this Portal. Please contact Administrator.',
     });
@@ -29,6 +39,14 @@ function establishSession(data: any, res: ExpressResponse): void {
     displayName: data.user.displayName,
     perms,
     isFullAccess,
+  });
+
+  logAudit({
+    userId: data.user.id,
+    username: data.user.username,
+    displayName: data.user.displayName,
+    action: method === 'sso' ? 'auth.sso_login' : 'auth.login',
+    ipAddress: req.ip,
   });
 
   res.cookie(SESSION_COOKIE, sessionId, COOKIE_OPTIONS);
@@ -65,10 +83,19 @@ router.post('/login', async (req: Request, res: ExpressResponse) => {
   const data: any = await iamRes.json().catch(() => ({}));
   if (!iamRes.ok) {
     // Relay syncaxis-iam's own message as-is (invalid credentials, locked account, etc).
+    logAudit({
+      userId: null,
+      username,
+      displayName: null,
+      action: 'auth.login_failed',
+      success: false,
+      details: { error: data.error || 'Login failed.' },
+      ipAddress: req.ip,
+    });
     return res.status(iamRes.status).json({ error: data.error || 'Login failed.' });
   }
 
-  establishSession(data, res);
+  establishSession(req, data, res, 'login');
 });
 
 // POST /api/auth/sso - true SSO: exchanges a short-lived, single-use code
@@ -94,14 +121,32 @@ router.post('/sso', async (req: Request, res: ExpressResponse) => {
 
   const data: any = await iamRes.json().catch(() => ({}));
   if (!iamRes.ok) {
+    logAudit({
+      userId: null,
+      username: null,
+      displayName: null,
+      action: 'auth.sso_failed',
+      success: false,
+      details: { error: data.error || 'Sign-in link is no longer valid.' },
+      ipAddress: req.ip,
+    });
     return res.status(iamRes.status).json({ error: data.error || 'Sign-in link is no longer valid - please try again from the Portal.' });
   }
 
-  establishSession(data, res);
+  establishSession(req, data, res, 'sso');
 });
 
 router.post('/logout', (req: Request, res: ExpressResponse) => {
-  destroySession(req.cookies?.[SESSION_COOKIE]);
+  const session = destroySession(req.cookies?.[SESSION_COOKIE]);
+  if (session) {
+    logAudit({
+      userId: session.userId,
+      username: session.username,
+      displayName: session.displayName,
+      action: 'auth.logout',
+      ipAddress: req.ip,
+    });
+  }
   res.clearCookie(SESSION_COOKIE);
   res.json({ ok: true });
 });
