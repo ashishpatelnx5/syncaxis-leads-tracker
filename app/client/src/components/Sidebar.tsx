@@ -1,8 +1,9 @@
-import { NavLink } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import { Logo } from './Logo';
 import { useAuth } from '../auth/AuthContext';
 import { useTheme } from '../theme/ThemeContext';
-import { HomeIcon, LeadsIcon, CustomersIcon, AdminIcon, LogoutIcon, MonitorIcon, SunIcon, MoonIcon, TeamPerformanceIcon } from './icons';
+import { HomeIcon, LeadsIcon, CustomersIcon, AdminIcon, LogoutIcon, MonitorIcon, SunIcon, MoonIcon, TeamPerformanceIcon, ChevronRightIcon } from './icons';
 
 const THEME_ICON = { system: MonitorIcon, light: SunIcon, dark: MoonIcon } as const;
 const THEME_LABEL = { system: 'Theme: System (click for Light)', light: 'Theme: Light (click for Dark)', dark: 'Theme: Dark (click for System)' } as const;
@@ -13,7 +14,11 @@ const BASE_NAV_ITEMS = [
   { to: '/leads', label: 'Leads', end: false, Icon: LeadsIcon },
   { to: '/customers', label: 'Customers', end: false, Icon: CustomersIcon },
 ];
-const ADMIN_NAV_ITEM = { to: '/admin', label: 'Admin', end: false, Icon: AdminIcon };
+const ADMIN_SUB_ITEMS = [
+  { to: '/admin/leads', label: 'Leads' },
+  { to: '/admin/customers', label: 'Customers' },
+  { to: '/admin/audit-log', label: 'Audit Log' },
+];
 
 interface SidebarProps {
   open: boolean;
@@ -23,8 +28,16 @@ interface SidebarProps {
 export function Sidebar({ open, onNavigate }: SidebarProps) {
   const { user, logout } = useAuth();
   const { mode, cycleTheme } = useTheme();
+  const location = useLocation();
   const ThemeIcon = THEME_ICON[mode];
-  const navItems = user?.isAdmin ? [...BASE_NAV_ITEMS, ADMIN_NAV_ITEM] : BASE_NAV_ITEMS;
+  const isAdminSection = location.pathname.startsWith('/admin');
+  const [adminOpen, setAdminOpen] = useState(isAdminSection);
+
+  // Auto-expand when navigation (e.g. a deep link) lands inside /admin/*,
+  // without fighting a manual collapse the user made while already there.
+  useEffect(() => {
+    if (isAdminSection) setAdminOpen(true);
+  }, [isAdminSection]);
 
   return (
     <aside className={`sidebar${open ? ' open' : ''}`}>
@@ -48,12 +61,36 @@ export function Sidebar({ open, onNavigate }: SidebarProps) {
       </div>
 
       <nav className="sidebar-nav">
-        {navItems.map(({ to, label, end, Icon }) => (
+        {BASE_NAV_ITEMS.map(({ to, label, end, Icon }) => (
           <NavLink key={to} to={to} end={end} className={({ isActive }) => (isActive ? 'active' : '')} onClick={onNavigate}>
             <Icon />
             {label}
           </NavLink>
         ))}
+
+        {user?.isAdmin && (
+          <div className="sidebar-nav-group">
+            <button
+              type="button"
+              className={`sidebar-nav-parent${isAdminSection ? ' active' : ''}`}
+              onClick={() => setAdminOpen((o) => !o)}
+              aria-expanded={adminOpen}
+            >
+              <AdminIcon />
+              Admin
+              <ChevronRightIcon className={`sidebar-nav-chevron${adminOpen ? ' open' : ''}`} />
+            </button>
+            {adminOpen && (
+              <div className="sidebar-nav-sub">
+                {ADMIN_SUB_ITEMS.map(({ to, label }) => (
+                  <NavLink key={to} to={to} className={({ isActive }) => (isActive ? 'active' : '')} onClick={onNavigate}>
+                    {label}
+                  </NavLink>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </nav>
     </aside>
   );

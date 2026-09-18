@@ -4,7 +4,6 @@ import { fetchLeads, fetchMeta, deleteLead } from '../api';
 import type { Lead, MetaResponse } from '../types';
 import { StatusBadge, ProductBadge } from '../components/StatusBadge';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-import { AdminTabs } from '../components/AdminTabs';
 import { PageSizeSelect } from '../components/PageSizeSelect';
 import { HeaderFilterDropdown } from '../components/HeaderFilterDropdown';
 import { formatInr, formatDate, sortProductInterests } from '../utils/format';
@@ -98,10 +97,8 @@ export function AdminLeadsPage() {
   return (
     <div className="page">
       <div className="page-header">
-        <h1>Admin</h1>
+        <h1>Admin &middot; Leads</h1>
       </div>
-
-      <AdminTabs />
 
       <p className="hint-text admin-intro">
         Deleting here is permanent from this UI and can't be undone from the app.

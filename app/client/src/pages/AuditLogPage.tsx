@@ -1,7 +1,6 @@
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import { fetchAuditLog, fetchAuditLogActions } from '../api';
 import type { AuditLogEntry } from '../types';
-import { AdminTabs } from '../components/AdminTabs';
 import { PageSizeSelect } from '../components/PageSizeSelect';
 import { formatDateTime } from '../utils/format';
 
@@ -132,10 +131,8 @@ export function AuditLogPage() {
   return (
     <div className="page">
       <div className="page-header">
-        <h1>Admin</h1>
+        <h1>Admin &middot; Audit Log</h1>
       </div>
-
-      <AdminTabs />
 
       <p className="hint-text admin-intro">
         Every tracked action across the app - logins, permission denials, and every create/update/delete

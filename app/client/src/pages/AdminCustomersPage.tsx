@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { fetchCustomers, deleteCustomer } from '../api';
 import type { Customer } from '../types';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-import { AdminTabs } from '../components/AdminTabs';
 import { PageSizeSelect } from '../components/PageSizeSelect';
 import { formatLocation } from '../utils/format';
 import { useAuth } from '../auth/AuthContext';
@@ -85,10 +84,8 @@ export function AdminCustomersPage() {
   return (
     <div className="page">
       <div className="page-header">
-        <h1>Admin</h1>
+        <h1>Admin &middot; Customers</h1>
       </div>
-
-      <AdminTabs />
 
       <p className="hint-text admin-intro">
         Deleting here is permanent from this UI and can't be undone from the app. A customer
