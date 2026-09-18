@@ -449,7 +449,6 @@ tbody tr:last-child td { border-bottom: none; }
 
 .cell-primary { font-weight: 600; }
 .cell-secondary { color: var(--color-text-muted); font-size: 0.8rem; }
-.row-actions { white-space: nowrap; }
 
 .empty-state { text-align: center; color: var(--color-text-muted); padding: 24px; }
 

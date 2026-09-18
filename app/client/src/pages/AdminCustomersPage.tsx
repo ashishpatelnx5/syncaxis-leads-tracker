@@ -1,16 +1,12 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { fetchCustomers, deleteCustomer } from '../api';
+import { useNavigate } from 'react-router-dom';
+import { fetchCustomers } from '../api';
 import type { Customer } from '../types';
-import { ConfirmDialog } from '../components/ConfirmDialog';
 import { PageSizeSelect } from '../components/PageSizeSelect';
 import { formatLocation } from '../utils/format';
-import { useAuth } from '../auth/AuthContext';
-import { LEADS_PERM } from '../permissions';
 
 export function AdminCustomersPage() {
   const navigate = useNavigate();
-  const { can } = useAuth();
   const [items, setItems] = useState<Customer[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -20,7 +16,6 @@ export function AdminCustomersPage() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [pendingDelete, setPendingDelete] = useState<Customer | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -42,18 +37,6 @@ export function AdminCustomersPage() {
     e.preventDefault();
     setPage(1);
     load();
-  }
-
-  async function confirmDelete() {
-    if (!pendingDelete) return;
-    try {
-      await deleteCustomer(pendingDelete.id);
-      setPendingDelete(null);
-      load();
-    } catch (err: any) {
-      setError(err.message);
-      setPendingDelete(null);
-    }
   }
 
   function handleSort(column: string) {
@@ -88,8 +71,7 @@ export function AdminCustomersPage() {
       </div>
 
       <p className="hint-text admin-intro">
-        Deleting here is permanent from this UI and can't be undone from the app. A customer
-        with active leads can't be deleted - reassign or delete those leads first.
+        Click a customer to view details - edit and delete live on that page.
       </p>
 
       <form className="filter-bar" onSubmit={handleSearchSubmit}>
@@ -114,12 +96,11 @@ export function AdminCustomersPage() {
               {sortableHeader('Location', 'City')}
               <th>Added By</th>
               {sortableHeader('Leads', 'LeadCount')}
-              <th></th>
             </tr>
           </thead>
           <tbody>
-            {loading && <tr><td colSpan={6} className="empty-state">Loading...</td></tr>}
-            {!loading && items.length === 0 && <tr><td colSpan={6} className="empty-state">No customers found.</td></tr>}
+            {loading && <tr><td colSpan={5} className="empty-state">Loading...</td></tr>}
+            {!loading && items.length === 0 && <tr><td colSpan={5} className="empty-state">No customers found.</td></tr>}
             {!loading && items.map((c) => (
               <tr key={c.id} className="clickable-row" onClick={() => navigate(`/customers/${c.id}`)}>
                 <td>
@@ -133,12 +114,6 @@ export function AdminCustomersPage() {
                 <td>{formatLocation(c) || '-'}</td>
                 <td>{c.addedBy || '-'}</td>
                 <td>{c.leadCount ?? 0}</td>
-                <td className="row-actions" onClick={(e) => e.stopPropagation()}>
-                  {can(LEADS_PERM.CUSTOMERS_UPDATE) && <Link to={`/customers/${c.id}/edit`} className="btn-link">Edit</Link>}
-                  {can(LEADS_PERM.CUSTOMERS_DELETE) && (
-                    <button className="btn-link btn-danger-link" onClick={() => setPendingDelete(c)}>Delete</button>
-                  )}
-                </td>
               </tr>
             ))}
           </tbody>
@@ -153,16 +128,6 @@ export function AdminCustomersPage() {
           <button className="btn" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</button>
         </div>
       </div>
-
-      {pendingDelete && (
-        <ConfirmDialog
-          title="Delete customer"
-          message={`Delete "${pendingDelete.companyName}"? This only works if they have no active leads - reassign or delete those first.`}
-          confirmLabel="Delete"
-          onConfirm={confirmDelete}
-          onCancel={() => setPendingDelete(null)}
-        />
-      )}
     </div>
   );
 }

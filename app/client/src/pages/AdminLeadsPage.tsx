@@ -1,18 +1,14 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { fetchLeads, fetchMeta, deleteLead } from '../api';
+import { useNavigate } from 'react-router-dom';
+import { fetchLeads, fetchMeta } from '../api';
 import type { Lead, MetaResponse } from '../types';
 import { StatusBadge, ProductBadge } from '../components/StatusBadge';
-import { ConfirmDialog } from '../components/ConfirmDialog';
 import { PageSizeSelect } from '../components/PageSizeSelect';
 import { HeaderFilterDropdown } from '../components/HeaderFilterDropdown';
 import { formatInr, formatDate, sortProductInterests } from '../utils/format';
-import { useAuth } from '../auth/AuthContext';
-import { LEADS_PERM } from '../permissions';
 
 export function AdminLeadsPage() {
   const navigate = useNavigate();
-  const { can } = useAuth();
   const [items, setItems] = useState<Lead[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -25,7 +21,6 @@ export function AdminLeadsPage() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [pendingDelete, setPendingDelete] = useState<Lead | null>(null);
   const [meta, setMeta] = useState<MetaResponse | null>(null);
 
   useEffect(() => {
@@ -52,18 +47,6 @@ export function AdminLeadsPage() {
     e.preventDefault();
     setPage(1);
     load();
-  }
-
-  async function confirmDelete() {
-    if (!pendingDelete) return;
-    try {
-      await deleteLead(pendingDelete.id);
-      setPendingDelete(null);
-      load();
-    } catch (err: any) {
-      setError(err.message);
-      setPendingDelete(null);
-    }
   }
 
   function handleSort(column: string) {
@@ -101,7 +84,7 @@ export function AdminLeadsPage() {
       </div>
 
       <p className="hint-text admin-intro">
-        Deleting here is permanent from this UI and can't be undone from the app.
+        Click a lead to view details - edit and delete live on that page.
       </p>
 
       <form className="filter-bar" onSubmit={handleSearchSubmit}>
@@ -152,15 +135,14 @@ export function AdminLeadsPage() {
                 />
               ))}
               {sortableHeader('Created', 'CreatedAt')}
-              <th></th>
             </tr>
           </thead>
           <tbody>
             {loading && (
-              <tr><td colSpan={9} className="empty-state">Loading...</td></tr>
+              <tr><td colSpan={8} className="empty-state">Loading...</td></tr>
             )}
             {!loading && items.length === 0 && (
-              <tr><td colSpan={9} className="empty-state">No leads found.</td></tr>
+              <tr><td colSpan={8} className="empty-state">No leads found.</td></tr>
             )}
             {!loading && items.map((lead) => (
               <tr key={lead.id} className="clickable-row" onClick={() => navigate(`/leads/${lead.id}`)}>
@@ -175,12 +157,6 @@ export function AdminLeadsPage() {
                 <td>{lead.leadValue !== null ? formatInr(lead.leadValue) : '-'}</td>
                 <td>{lead.leadGeneratedBy || '-'}</td>
                 <td>{formatDate(lead.createdAt)}</td>
-                <td className="row-actions" onClick={(e) => e.stopPropagation()}>
-                  {can(LEADS_PERM.LEADS_UPDATE) && <Link to={`/leads/${lead.id}/edit`} className="btn-link">Edit</Link>}
-                  {can(LEADS_PERM.LEADS_DELETE) && (
-                    <button className="btn-link btn-danger-link" onClick={() => setPendingDelete(lead)}>Delete</button>
-                  )}
-                </td>
               </tr>
             ))}
           </tbody>
@@ -195,16 +171,6 @@ export function AdminLeadsPage() {
           <button className="btn" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</button>
         </div>
       </div>
-
-      {pendingDelete && (
-        <ConfirmDialog
-          title="Delete lead"
-          message={`Delete the lead for "${pendingDelete.customer.companyName}" (Inquiry ${pendingDelete.inquiryNumber || '-'})? This cannot be undone from the UI.`}
-          confirmLabel="Delete"
-          onConfirm={confirmDelete}
-          onCancel={() => setPendingDelete(null)}
-        />
-      )}
     </div>
   );
 }

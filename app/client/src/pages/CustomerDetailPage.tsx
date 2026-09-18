@@ -1,21 +1,25 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { fetchCustomer } from '../api';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { deleteCustomer, fetchCustomer } from '../api';
 import type { Customer, Lead } from '../types';
 import { StatusBadge, PriorityBadge } from '../components/StatusBadge';
 import { Field } from '../components/Field';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { formatLocation } from '../utils/format';
 import { useAuth } from '../auth/AuthContext';
 import { LEADS_PERM } from '../permissions';
 
 export function CustomerDetailPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { can } = useAuth();
   const customerId = Number(id);
 
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchCustomer(customerId)
@@ -25,6 +29,18 @@ export function CustomerDetailPage() {
       })
       .catch((err) => setError(err.message));
   }, [customerId]);
+
+  async function confirmDelete() {
+    setDeleting(true);
+    try {
+      await deleteCustomer(customerId);
+      navigate('/customers');
+    } catch (err: any) {
+      setError(err.message);
+      setDeleting(false);
+      setConfirmingDelete(false);
+    }
+  }
 
   if (error && !customer) return <div className="page"><div className="alert alert-error">{error}</div></div>;
   if (!customer) return <div className="page">Loading...</div>;
@@ -38,7 +54,8 @@ export function CustomerDetailPage() {
         </div>
         <div className="page-header-actions">
           {can(LEADS_PERM.LEADS_CREATE) && <Link to={`/leads/new?customerId=${customer.id}`} className="btn btn-primary">+ Add Lead</Link>}
-          {can(LEADS_PERM.CUSTOMERS_UPDATE) && <Link to={`/customers/${customer.id}/edit`} className="btn">Edit</Link>}
+          {can(LEADS_PERM.CUSTOMERS_UPDATE) && <Link to={`/customers/${customer.id}/edit`} className="btn btn-primary">Edit</Link>}
+          {can(LEADS_PERM.CUSTOMERS_DELETE) && <button className="btn btn-danger" onClick={() => setConfirmingDelete(true)}>Delete</button>}
         </div>
       </div>
 
@@ -90,6 +107,16 @@ export function CustomerDetailPage() {
           </div>
         )}
       </section>
+
+      {confirmingDelete && (
+        <ConfirmDialog
+          title="Delete customer"
+          message={`Delete "${customer.companyName}"? This only works if they have no active leads - reassign or delete those first. This cannot be undone from the UI.`}
+          confirmLabel={deleting ? 'Deleting...' : 'Delete'}
+          onConfirm={confirmDelete}
+          onCancel={() => setConfirmingDelete(false)}
+        />
+      )}
     </div>
   );
 }

@@ -1,11 +1,12 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { fetchLead, addFollowup, deleteFollowup, fetchMeta } from '../api';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { fetchLead, addFollowup, deleteFollowup, deleteLead, fetchMeta } from '../api';
 import type { Lead, Followup, Attachment, MetaResponse } from '../types';
 import { StatusBadge, PriorityBadge, ProductBadge } from '../components/StatusBadge';
 import { FollowupTimeline } from '../components/FollowupTimeline';
 import { AttachmentsSection } from '../components/AttachmentsSection';
 import { Field } from '../components/Field';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { formatInr, formatLocation } from '../utils/format';
 import { useAuth } from '../auth/AuthContext';
 import { LEADS_PERM } from '../permissions';
@@ -13,6 +14,7 @@ import { LEADS_PERM } from '../permissions';
 export function LeadDetailPage() {
   const { id } = useParams();
   const leadId = Number(id);
+  const navigate = useNavigate();
   const { can } = useAuth();
   const canUpdate = can(LEADS_PERM.LEADS_UPDATE);
 
@@ -21,6 +23,8 @@ export function LeadDetailPage() {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [meta, setMeta] = useState<MetaResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const [fuDate, setFuDate] = useState(new Date().toISOString().slice(0, 10));
   const [fuNote, setFuNote] = useState('');
@@ -74,6 +78,18 @@ export function LeadDetailPage() {
     }
   }
 
+  async function confirmDelete() {
+    setDeleting(true);
+    try {
+      await deleteLead(leadId);
+      navigate('/leads');
+    } catch (err: any) {
+      setError(err.message);
+      setDeleting(false);
+      setConfirmingDelete(false);
+    }
+  }
+
   if (error && !lead) return <div className="page"><div className="alert alert-error">{error}</div></div>;
   if (!lead) return <div className="page">Loading...</div>;
 
@@ -90,7 +106,8 @@ export function LeadDetailPage() {
           </div>
         </div>
         <div className="page-header-actions">
-          {canUpdate && <Link to={`/leads/${lead.id}/edit`} className="btn">Edit</Link>}
+          {canUpdate && <Link to={`/leads/${lead.id}/edit`} className="btn btn-primary">Edit</Link>}
+          {can(LEADS_PERM.LEADS_DELETE) && <button className="btn btn-danger" onClick={() => setConfirmingDelete(true)}>Delete</button>}
         </div>
       </div>
 
@@ -193,6 +210,16 @@ export function LeadDetailPage() {
           </form>
         )}
       </section>
+
+      {confirmingDelete && (
+        <ConfirmDialog
+          title="Delete lead"
+          message={`Delete the lead for "${lead.customer.companyName}" (Inquiry ${lead.inquiryNumber || '-'})? This cannot be undone from the UI.`}
+          confirmLabel={deleting ? 'Deleting...' : 'Delete'}
+          onConfirm={confirmDelete}
+          onCancel={() => setConfirmingDelete(false)}
+        />
+      )}
     </div>
   );
 }
