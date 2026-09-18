@@ -332,12 +332,6 @@ export function deleteCustomer(id: number): Promise<void> {
 }
 
 export interface AuditLogFilters {
-  username?: string;
-  action?: string;
-  entityType?: string;
-  success?: boolean;
-  dateFrom?: string;
-  dateTo?: string;
   q?: string;
   page?: number;
   pageSize?: number;
@@ -356,8 +350,4 @@ export function fetchAuditLog(filters: AuditLogFilters): Promise<AuditLogListRes
     if (value !== undefined && value !== null && value !== '') params.set(key, String(value));
   });
   return request(`/audit-log?${params.toString()}`);
-}
-
-export function fetchAuditLogActions(): Promise<string[]> {
-  return request('/audit-log/actions');
 }

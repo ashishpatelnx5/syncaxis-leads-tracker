@@ -9,63 +9,32 @@ const router = Router();
 // than per-route, same pattern as stats.ts.
 router.use(requirePermission(LEADS_PERM.ADMIN_MANAGE));
 
-// Builds the WHERE conditions for the audit log list, binding parameters on
-// the given request - shared so count and data queries always agree.
-function applyAuditFilters(request: any, query: Record<string, string>): string[] {
-  const { username, action, entityType, success, dateFrom, dateTo, q } = query;
-  const conditions: string[] = [];
-
-  if (username) {
-    conditions.push('Username = @username');
-    request.input('username', sql.NVarChar, username);
-  }
-  if (action) {
-    conditions.push('Action = @action');
-    request.input('action', sql.NVarChar, action);
-  }
-  if (entityType) {
-    conditions.push('EntityType = @entityType');
-    request.input('entityType', sql.NVarChar, entityType);
-  }
-  if (success === 'true') {
-    conditions.push('Success = 1');
-  } else if (success === 'false') {
-    conditions.push('Success = 0');
-  }
-  if (dateFrom) {
-    conditions.push('CreatedAt >= @dateFrom');
-    request.input('dateFrom', sql.DateTime2, new Date(dateFrom));
-  }
-  if (dateTo) {
-    // Inclusive of the whole day passed in, not just up to midnight at its start.
-    conditions.push('CreatedAt < DATEADD(DAY, 1, @dateTo)');
-    request.input('dateTo', sql.DateTime2, new Date(dateTo));
-  }
-  if (q) {
-    conditions.push("(Username LIKE @q OR DisplayName LIKE @q OR Action LIKE @q OR CAST(Details AS NVARCHAR(MAX)) LIKE @q)");
-    request.input('q', sql.NVarChar, `%${q}%`);
-  }
-
-  return conditions;
-}
-
-// GET /api/audit-log - paginated, filterable activity trail (admin only)
+// GET /api/audit-log - paginated activity trail (admin only). One free-text
+// search box covers everything worth filtering by - who, what action, what
+// entity type, from what IP, or any word inside the details JSON - rather
+// than a separate control per column.
 router.get('/', async (req: Request, res: Response) => {
   try {
     const query = req.query as Record<string, string>;
-    const { page = '1', pageSize = '50' } = query;
+    const { page = '1', pageSize = '50', q } = query;
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const size = Math.min(200, Math.max(1, parseInt(pageSize, 10) || 50));
     const offset = (pageNum - 1) * size;
 
     const pool = await getPool();
 
+    const conditions: string[] = [];
     const countRequest = pool.request();
-    const conditions = applyAuditFilters(countRequest, query);
+    const dataRequest = pool.request();
+
+    if (q) {
+      const clause = '(Username LIKE @q OR DisplayName LIKE @q OR Action LIKE @q OR EntityType LIKE @q OR IpAddress LIKE @q OR CAST(Details AS NVARCHAR(MAX)) LIKE @q)';
+      conditions.push(clause);
+      countRequest.input('q', sql.NVarChar, `%${q}%`);
+      dataRequest.input('q', sql.NVarChar, `%${q}%`);
+    }
     const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
 
-    const dataRequest = pool.request();
-    applyAuditFilters(dataRequest, query);
     dataRequest.input('offset', sql.Int, offset);
     dataRequest.input('size', sql.Int, size);
 
@@ -88,19 +57,6 @@ router.get('/', async (req: Request, res: Response) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to fetch audit log' });
-  }
-});
-
-// GET /api/audit-log/actions - distinct action values seen so far, for the
-// filter dropdown (so it only ever offers actions that actually occur).
-router.get('/actions', async (_req: Request, res: Response) => {
-  try {
-    const pool = await getPool();
-    const result = await pool.request().query('SELECT DISTINCT Action FROM dbo.AuditLog ORDER BY Action');
-    res.json(result.recordset.map((r: any) => r.Action as string));
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Failed to fetch audit log actions' });
   }
 });
 

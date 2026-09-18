@@ -878,31 +878,26 @@ input:disabled {
 
 .admin-intro { margin-bottom: 20px; }
 
-.audit-date-field {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.85rem;
+/* Fixed layout so the narrow columns (Time/Result/IP) stay their natural
+   width and Details - the one column with actually-variable-length content
+   - absorbs whatever space is left, on any window size, instead of the
+   browser spreading leftover width evenly across every column. */
+.audit-log-table { table-layout: fixed; }
+.audit-log-table th:nth-child(1), .audit-log-table td.audit-time-cell { width: 160px; white-space: nowrap; }
+.audit-log-table th:nth-child(2), .audit-log-table td:nth-child(2) { width: 160px; }
+.audit-log-table th:nth-child(3), .audit-log-table td:nth-child(3) { width: 140px; }
+.audit-log-table th:nth-child(4), .audit-log-table td:nth-child(4) { width: 120px; }
+.audit-log-table th:nth-child(5), .audit-log-table td:nth-child(5) { width: 90px; }
+.audit-log-table th:nth-child(6), .audit-log-table td:nth-child(6) { width: 110px; }
+
+.audit-details-cell {
+  max-width: 0; /* with table-layout:fixed, forces the ellipsis instead of growing the cell */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--color-text-muted);
-}
-.audit-date-field input { padding: 6px 8px; }
-
-.audit-details-row { background: var(--color-surface-hover); }
-.audit-details-row td { padding: 12px !important; }
-
-.audit-details-table {
-  width: 100%;
-  border-collapse: collapse;
   font-size: 0.85rem;
 }
-.audit-details-table th,
-.audit-details-table td {
-  text-align: left;
-  padding: 4px 12px 4px 0;
-  border-bottom: 1px solid var(--color-border);
-  vertical-align: top;
-}
-.audit-details-key { font-weight: 600; white-space: nowrap; }
 
 .customer-readonly {
   background: var(--color-bg);
