@@ -878,17 +878,20 @@ input:disabled {
 
 .admin-intro { margin-bottom: 20px; }
 
-/* Fixed layout so the narrow columns (Time/Result/IP) stay their natural
-   width and Details - the one column with actually-variable-length content
-   - absorbs whatever space is left, on any window size, instead of the
-   browser spreading leftover width evenly across every column. */
+/* Fixed layout with percentage widths (not fixed px) so every column scales
+   proportionally with the table's own width - which is always 100% of
+   .table-wrap - on any window size or screen resolution, rather than only
+   working at one specific viewport width. Details (the one column with
+   actually-variable-length content) gets the largest share; genuinely
+   narrow viewports still fall back to .table-wrap's horizontal scroll. */
 .audit-log-table { table-layout: fixed; }
-.audit-log-table th:nth-child(1), .audit-log-table td.audit-time-cell { width: 160px; white-space: nowrap; }
-.audit-log-table th:nth-child(2), .audit-log-table td:nth-child(2) { width: 160px; }
-.audit-log-table th:nth-child(3), .audit-log-table td:nth-child(3) { width: 140px; }
-.audit-log-table th:nth-child(4), .audit-log-table td:nth-child(4) { width: 120px; }
-.audit-log-table th:nth-child(5), .audit-log-table td:nth-child(5) { width: 90px; }
-.audit-log-table th:nth-child(6), .audit-log-table td:nth-child(6) { width: 110px; }
+.audit-log-table th:nth-child(1), .audit-log-table td:nth-child(1) { width: 13%; }
+.audit-log-table th:nth-child(2), .audit-log-table td:nth-child(2) { width: 13%; }
+.audit-log-table th:nth-child(3), .audit-log-table td:nth-child(3) { width: 13%; }
+.audit-log-table th:nth-child(4), .audit-log-table td:nth-child(4) { width: 11%; }
+.audit-log-table th:nth-child(5), .audit-log-table td:nth-child(5) { width: 8%; }
+.audit-log-table th:nth-child(6), .audit-log-table td:nth-child(6) { width: 10%; }
+.audit-log-table th:nth-child(7), .audit-log-table td:nth-child(7) { width: 32%; }
 
 .audit-details-cell {
   max-width: 0; /* with table-layout:fixed, forces the ellipsis instead of growing the cell */

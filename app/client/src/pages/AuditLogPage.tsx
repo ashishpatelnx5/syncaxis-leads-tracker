@@ -112,7 +112,7 @@ export function AuditLogPage() {
             {!loading && items.length === 0 && <tr><td colSpan={7} className="empty-state">No audit log entries found.</td></tr>}
             {!loading && items.map((entry) => (
               <tr key={entry.id}>
-                <td className="audit-time-cell">{formatDateTime(entry.createdAt)}</td>
+                <td>{formatDateTime(entry.createdAt)}</td>
                 <td>
                   <div className="cell-primary">{entry.displayName || entry.username || '-'}</div>
                   {entry.username && entry.displayName && <div className="cell-secondary">{entry.username}</div>}
