@@ -82,7 +82,7 @@ export function AdminCustomersPage() {
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
-        <button type="submit" className="btn">Search</button>
+        <button type="submit" className="btn btn-search">Search</button>
       </form>
 
       {error && <div className="alert alert-error">{error}</div>}

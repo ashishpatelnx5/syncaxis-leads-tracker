@@ -88,7 +88,7 @@ export function AuditLogPage() {
           onChange={(e) => setQ(e.target.value)}
           className="search-input"
         />
-        <button type="submit" className="btn">Search</button>
+        <button type="submit" className="btn btn-search">Search</button>
         <button type="button" className="btn" onClick={clearFilters}>Clear</button>
       </form>
 

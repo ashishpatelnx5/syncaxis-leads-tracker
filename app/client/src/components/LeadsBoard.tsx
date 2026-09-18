@@ -181,7 +181,7 @@ export function LeadsBoard() {
           onChange={(e) => setQ(e.target.value)}
           className="search-input"
         />
-        <button type="submit" className="btn">Search</button>
+        <button type="submit" className="btn btn-search">Search</button>
       </form>
       <p className="hint-text">Click the next stage's dot on a card to advance it. Quotations are generated in SourcePro ERP - advancing here just updates the status, not the ERP reference.</p>
 

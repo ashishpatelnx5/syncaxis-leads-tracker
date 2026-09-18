@@ -284,6 +284,13 @@ a:hover { text-decoration: underline; }
 .btn:hover { background: var(--color-surface-hover); text-decoration: none; }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+.btn-search {
+  background: var(--color-subtle-bg);
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+.btn-search:hover { background: var(--color-surface-hover); }
+
 .btn-primary {
   background: var(--color-primary);
   border-color: var(--color-primary);
@@ -328,7 +335,10 @@ a:hover { text-decoration: underline; }
   font-size: 0.9rem;
 }
 
-.search-input { flex: 1; min-width: 220px; }
+/* flex-basis (not flex:1) so it doesn't stretch to fill the entire filter
+   bar on a wide screen, pushing the Search button far away from it - it
+   still shrinks down to min-width on a narrow one via .filter-bar's wrap. */
+.search-input { flex: 0 1 320px; min-width: 200px; }
 
 .filter-bar-stacked {
   display: flex;

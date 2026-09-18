@@ -82,7 +82,7 @@ export function CustomersListPage() {
           onChange={(e) => setQ(e.target.value)}
           className="search-input"
         />
-        <button type="submit" className="btn">Search</button>
+        <button type="submit" className="btn btn-search">Search</button>
       </form>
 
       {error && <div className="alert alert-error">{error}</div>}
